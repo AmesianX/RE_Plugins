@@ -1,0 +1,91 @@
+graph: {
+title: "Xrefs to sub_4122CC"
+// IDA palette
+colorentry 32: 0 0 0
+colorentry 33: 0 0 255
+colorentry 34: 0 0 255
+colorentry 35: 128 128 128
+colorentry 36: 128 128 128
+colorentry 37: 0 0 128
+colorentry 38: 0 0 128
+colorentry 39: 0 0 255
+colorentry 40: 0 0 255
+colorentry 41: 0 0 128
+colorentry 42: 0 128 0
+colorentry 43: 0 255 0
+colorentry 44: 0 128 0
+colorentry 45: 255 128 0
+colorentry 46: 0 128 0
+colorentry 47: 128 128 255
+colorentry 48: 255 0 0
+colorentry 49: 128 128 0
+colorentry 50: 1 1 1
+colorentry 51: 192 192 192
+colorentry 52: 0 0 255
+colorentry 53: 0 0 255
+colorentry 54: 0 0 255
+colorentry 55: 128 128 128
+colorentry 56: 128 128 255
+colorentry 57: 0 128 0
+colorentry 58: 0 0 128
+colorentry 59: 0 0 255
+colorentry 60: 128 0 128
+colorentry 61: 0 128 0
+colorentry 62: 0 128 0
+colorentry 63: 0 128 64
+colorentry 64: 0 0 128
+colorentry 65: 0 0 128
+colorentry 66: 255 0 255
+colorentry 67: 128 128 0
+colorentry 68: 0 0 128
+colorentry 69: 0 0 255
+colorentry 70: 0 0 128
+colorentry 71: 0 0 255
+colorentry 72: 0 0 0
+colorentry 73: 255 255 255
+colorentry 74: 192 192 192
+colorentry 75: 0 255 255
+colorentry 76: 0 0 0
+colorentry 77: 128 0 0
+colorentry 78: 128 128 128
+colorentry 79: 128 128 0
+colorentry 80: 255 0 255
+colorentry 81: 0 0 0
+colorentry 82: 0 0 255
+colorentry 83: 0 0 0
+node: { title: "0" label: "sub_0100739D" color: 76 textcolor: 73 borderwidth: 10 bordercolor: 82  }
+node: { title: "1" label: "sub_412338" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "2" label: "sub_406100" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "3" label: "sub_40617C" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "4" label: "sub_417A5C" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "5" label: "sub_415A68" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "6" label: "sub_417B64" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "7" label: "sub_41582C" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "8" label: "sub_413FD0" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "9" label: "_main" color: 76 textcolor: 73 bordercolor: black }
+node: { title: "10" label: ".data:00427100: dd offset _main" textcolor: 78 bordercolor: black }
+// node 0
+// node 1
+edge: { sourcename: "1" targetname: "0" }
+// node 2
+edge: { sourcename: "2" targetname: "1" }
+// node 3
+edge: { sourcename: "3" targetname: "1" }
+// node 4
+edge: { sourcename: "4" targetname: "1" }
+// node 5
+edge: { sourcename: "5" targetname: "2" }
+// node 6
+edge: { sourcename: "6" targetname: "2" }
+edge: { sourcename: "6" targetname: "3" }
+edge: { sourcename: "6" targetname: "4" }
+// node 7
+edge: { sourcename: "7" targetname: "5" }
+// node 8
+edge: { sourcename: "8" targetname: "6" }
+edge: { sourcename: "8" targetname: "7" }
+// node 9
+edge: { sourcename: "9" targetname: "8" }
+// node 10
+edge: { sourcename: "10" targetname: "9" }
+}

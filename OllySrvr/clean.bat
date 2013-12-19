@@ -1,0 +1,9 @@
+del *.plg
+del *.ncb
+del *.pdb
+del *.idb
+del *.pch
+del *.obj
+del *.exp
+del *.opt
+del OllySrvr.lib

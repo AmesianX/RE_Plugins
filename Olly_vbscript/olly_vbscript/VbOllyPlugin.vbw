@@ -1,0 +1,11 @@
+CPlugin = 37, 20, 695, 590, 
+frmOllyScript = 11, 13, 638, 564, , 30, 1, 573, 498, C
+modOllyAPI = -38, 17, 656, 524, C
+COlly = -137, 11, 582, 609, C
+frmScripts = 15, 64, 646, 620, C, 91, 34, 632, 465, C
+clsFileSystem = 88, 88, 553, 533, 
+CSocket = 66, 66, 493, 502, C
+MSocketSupport = 44, 44, 509, 489, 
+COllySocket = 24, 11, 622, 620, 
+frmSocketSync = 115, 117, 860, 594, , 88, 88, 537, 524, C
+CIntelliLight = 21, -1, 599, 541, 

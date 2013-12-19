@@ -1,0 +1,127 @@
+;
+;Script Callback functions (only active if hook enabled)
+;-------------------------------------------------------
+; 1st) sub BpxHandler_[eip]
+; 2nd) sub BpxHandler_? (where ? = script step (BpxHandler variable) )
+; 3rd) sub Default_BPX_Handler
+;
+
+;Script Specific functions:
+;----------------------------------------------------
+Sub EnableBpxHook()
+Sub DisableBpxHook()
+Sub ShowUI()
+Sub LogIt(x As Variant) (aliased to l() as well) add txt to lower txtbox
+Sub ClearLog()
+Property Get BpxHandler() 'get step counter (for breakpoint sub) 
+sub SetBpxHandler(x)  'set step counter
+Sub Exec(cmd)
+Sub ShowBpxHandlerWarning(Optional enabled = True)
+ 
+
+
+;Olly API Prototypes
+;-------------------
+;
+; General Access/Analysis/Display
+; ---------------------------------
+Sub Refresh()
+Sub RefreshCPU()
+Function OpenFile(path) As Boolean 'not really useful because wont load till UI closed
+Function InstLen(offset) As Long  (1 based) 'instruction lenght of compile byte codes
+Function ModBaseAddr() As Long
+Function ModSize() As Long
+Function ProcBegin(addr) As Long
+Function ProcEnd(addr) As Long
+Function PrevProc(addr) As Long
+Function NextProc(addr) As Long
+Function GetLabel(offset) As String
+Function GetComment(offset) As String
+Function GetAny(offset) As String
+Function SetLabel(offset, val)
+Function SetComment(offset, val)
+Function CurrentThreadID() As Long
+Function FollowCall(addr) As Long
+
+; Raw Memory Access/Modification
+; -------------------------------------
+Function DecodeString(offset, Optional commentBuffer) As String
+Function DecodeAscii(offset, Optional bufSize = 257) As String
+Function DecodeUniStr(offset, Optional bufSize = 257) As String
+Function HideDebugger(Optional breakOnRead = False)
+Function Dump(start, length, fpath) As Boolean
+Sub Nop(offset, length)
+function GetAsm(offset) as string
+Function Asm(offset, cmd) ;assem single command
+Function BlockAsm(ByVal offset, cmds) (crlf or ; seperate command)
+Function GetByteCode(offset As Long) As Byte() (0based ary)  'raw byte values of command
+Function WriteMem(buf(), addr) As Long
+Function ReadMem(addr, size) As Variant() ( byte() ) 
+
+;Register Access
+;---------------------------
+Property Get EAX()
+Property Get ECX() 
+Property Get EDX() 
+Property Get EBX() 
+Property Get ESP() 
+Property Get EBP()  
+Property Get ESI()  
+Property Get EDI()  
+Property Get EIP() 
+Sub setEIP(x)
+Sub setEAX(x)
+Sub setECX(x)
+Sub setEDX(x)
+Sub setEBX(x)
+Sub setEsp(x)
+Sub setEBP(x)
+Sub setESI(x)
+Sub setEDI(x)
+
+;Breakpoints
+; ------------------------
+Function SetBpx(adr) As Long
+Function RemoveBpx(adr) As Long
+Function OneShotBpx(adr) As Long
+Function SetHdwBpAccess(adr) As Long
+Function SetHdwBpWrite(adr) As Long
+Function SetHdwBpExecution(adr) As Long
+Sub RemoveHwdBpx(valu, Optional byIndex = False) 'by address default 
+Sub SetMultiBpx(ParamArray bpxs()) 'usage: SetMultiBpx eip, &h4012b5, &h405060, etc...
+Sub RemMultiBpx(ParamArray bpxs())
+
+; Execution
+; ----------------------------
+Sub Go()
+Sub StepInto()
+Sub StepOver()
+Sub ExecTillRet()
+Sub ExecTillUserCode()
+
+
+
+;FileSystem Access Functions
+;-------------------------------------------------------
+Function GetFolderFiles(folderPath, Optional filter = "*", Optional retFullPath = True) As Variant()
+Function GetSubFolders(folderPath, Optional retFullPath = True) As Variant()
+Function FolderExists(path) As Boolean
+Function FileExists(path) As Boolean
+Function GetParentFolder(path)
+Sub CreateFolder(path)
+Function FileNameFromPath(fullpath)
+Function DeleteFile(fpath) As Boolean
+Sub Rename(fullpath, newName)
+Function GetExtension(path)
+Function GetBaseName(path)
+Function SafeFileName(proposed)
+Function RandomNum() As Long
+Function GetFreeFileName(folder, Optional extension = ".txt")
+Function buildPath(folderPath) As Boolean
+Function readFile(filename) As Variant
+Sub writeFile(path, it)
+Sub AppendFile(path, it)
+Function Copy(fpath, toFolder)
+Function Move(fpath, toFolder)
+Function DeleteFolder(folderPath, Optional force = True) As Boolean
+Function FolderName(folderPath)

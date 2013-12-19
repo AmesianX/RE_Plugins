@@ -1,0 +1,108 @@
+;IDA API ACCESS
+;-----------------------------------
+Function FuncIndex(addr)
+Function FuncArgSize(index)
+Function FuncColor(index) As Byte
+Sub PatchByte(addr, valu)
+Sub PatchWord(addr, valu)
+Sub DelFunc(addr)
+Sub SetComment(offset, comment)
+Function GetComment(offset)
+Sub AddProgramComment(cmt)
+Sub AddCodeXRef(start, endd)
+Sub DelCodeXRef(start, endd)
+Sub AddDataXRef(start, endd)
+Sub DelDataXRef(start, endd)
+Sub MessageUI(msg)
+Function NumFuncs()
+Function FunctionStart(functionIndex)
+Function FunctionEnd(functionIndex)
+Sub Jump(offset)
+Sub RemvName(offset)
+Sub Setname(offset, name)
+Sub Refresh()
+Function ScreenEA()
+Sub SelBounds(SelStart, SelEnd)
+Function SelStart()
+Function SelEnd()
+Function GetFuncName(offset)
+Function GetAsm(offset)
+Function GetAsmBlock(start, leng)
+Function GetBytes(start, leng)
+Function LogIt(msg)
+Sub ClearLog()
+sub Done()
+Sub MakeCode(offset)
+Sub Undefine(offset)
+Sub AnalyzeArea(startat, endat)
+Function GetName(offset)
+Function OrgByte(offset)
+Sub Exec(cmd)
+Function ShowEA(offset)
+Function HideEA(offset)
+Function HideX(offset, leng)
+Function ShowX(offset, leng)
+Function HideOffsets(startea, endea)
+Function ShowOffsets(startea, endea)
+
+
+;NORMAL FILE SYSTEM ACCESS
+;------------------------------
+Function GetFolderFiles(folderPath, Optional filter = "*", Optional retFullPath = True) As Variant()
+Function GetSubFolders(folderPath, Optional retFullPath = True) As Variant()
+Function FolderExists(path) As Boolean
+Function FileExists(path) As Boolean
+Function GetParentFolder(path)
+Sub CreateFolder(path)
+Function FileNameFromPath(fullpath)
+Function WebFileNameFromPath(fullpath)
+Function DeleteFile(fpath) As Boolean
+Sub Rename(fullpath, newName)
+Sub SetAttribute(fpath, it As VbFileAttribute)
+Function GetExtension(path)
+Function GetBaseName(path)
+Function ChangeExt(path, ext)
+Function SafeFileName(proposed)
+Function RandomNum() As Long
+Function GetFreeFileName(folder, Optional extension = ".txt")
+Function buildPath(folderPath) As Boolean
+Function readFile(filename) As Variant
+Sub writeFile(path, it)
+Sub AppendFile(path, it)
+Function Copy(fpath, toFolder)
+Function Move(fpath, toFolder)
+Sub CreateFile(fpath)
+Function DeleteFolder(folderPath, Optional force = True) As Boolean
+Function FolderName(folderPath)
+
+
+;BINARY FILE ACCESS
+;---------------------------------
+Public isOpen As Boolean
+Public fhand As Long
+Sub fOpen(pth)
+Sub fClose()
+Sub PutC(b)
+Function GetC()
+Function FLen()
+Sub PutCO(offset, b)
+Function GetCO(offset)
+Sub PutStr(offset, str)
+Function GetAry(offset, size)
+Function PutAry(offset, ary)
+
+
+
+;sample script
+;-----------------
+;s = &h4012ba
+;v = GetBytes(s, 30);
+;
+;for i=0 to 30 
+;  y = v(i) xor &hff
+;  z = s+i
+;  logit z & " " & y & " " & v(i)
+;  patchbyte z , y
+;next
+;
+;refresh

@@ -1,0 +1,20 @@
+ÿjseg001:814EBC20 generate_hash   proc near               ; CODE XREF: GetApi_By_Hash+3Dp
+seg001:814EBC20
+seg001:814EBC20 arg_0           = dword ptr  4
+seg001:814EBC20
+seg001:814EBC20                 mov     ecx, [esp+arg_0]
+seg001:814EBC24                 xor     eax, eax
+seg001:814EBC26                 cmp     [ecx], al       ; is 0?
+seg001:814EBC28                 jz      short ret_now
+seg001:814EBC2A
+seg001:814EBC2A loc_814EBC2A:                           ; CODE XREF: generate_hash+19j
+seg001:814EBC2A                 movzx   edx, word ptr [ecx] ; first char value of string
+seg001:814EBC2D                 imul    eax, 1003Fh
+seg001:814EBC33                 add     eax, edx
+seg001:814EBC35                 inc     ecx             ; pos counter var
+seg001:814EBC36                 cmp     byte ptr [ecx], 0 ; last byte in string
+seg001:814EBC39                 jnz     short loc_814EBC2A ; first char value of string
+seg001:814EBC3B
+seg001:814EBC3B ret_now:                                ; CODE XREF: generate_hash+8j
+seg001:814EBC3B                 retn    4
+seg001:814EBC3B generate_hash   endp

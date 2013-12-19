@@ -1,0 +1,155 @@
+
+'iceburn_tuga on 17 May 2007 
+'http://www.programmersheaven.com/user/iceburn_tuga/
+
+Public Function Myhex(entrada) As String
+    Dim valor As String
+    Dim c As Integer
+    Dim resultado As String
+    Dim vc As String
+    Dim i As Integer
+    valor = entrada
+    For i = 16 To 0 Step -1
+        vc = potencia(16, i)
+        c = dividir(valor, vc)
+        resultado = resultado & myhexchar(c)
+        If c > 0 Then
+            valor = subtrair(valor, multiplicar(vc, Trim(Val(c))))
+        End If
+    Next i
+    While Left$(resultado, 1) = "0" And Len(resultado) > 1
+            resultado = Mid$(resultado, 2, Len(resultado) - 1)
+    Wend
+    Myhex = resultado
+End Function
+
+Public Function myhexchar(ent) As String
+    Dim res As String
+    Select Case ent
+        Case 0 To 9: res = Trim(Str(ent))
+        Case 10 To 15: res = UCase(Chr$(ent + 87))
+    End Select
+    myhexchar = res
+End Function
+
+Function dividir(dividendo As String, divisor As String) As Integer
+    Dim ress As Integer
+    Dim mult As String
+    ress = 0
+    Do
+        ress = ress + 1
+        mult = multiplicar(divisor, Trim(Val(ress)))
+    Loop While Not (maiorque(mult, dividendo))
+    dividir = ress - 1
+End Function
+Function maiorque(x1 As String, x2 As String) As Boolean
+    If Len(x1) > Len(x2) Then
+        maiorque = True
+        Exit Function
+    End If
+    
+    If Len(x2) > Len(x1) Or x1 = x2 Then
+        maiorque = False
+        Exit Function
+    End If
+    
+    For i = 1 To Len(x1)
+        If Asc(Mid$(x1, i, 1)) < Asc(Mid$(x2, i, 1)) Then
+            maiorque = False
+            Exit Function
+        ElseIf Asc(Mid$(x1, i, 1)) > Asc(Mid$(x2, i, 1)) Then
+            maiorque = True
+            Exit Function
+        End If
+    Next i
+    
+    maiorque = True
+    
+End Function
+
+
+Function subtrair(maior As String, menor As String) As String
+    Dim resultado As String
+    Dim vienen As Integer
+    Dim x, y As Integer
+    Dim i As Integer
+    vienen = 0
+    For i = 1 To Len(maior)
+        x = posicion(maior, i)
+        y = posicion(menor, i) + vienen
+        If y > x Then
+            vienen = 1
+            x = x + 10
+        Else
+            vienen = 0
+        End If
+        resultado = Trim(Val(x - y)) & resultado
+    Next i
+    While Left$(resultado, 1) = "0" And Len(resultado) > 1
+            resultado = Mid$(resultado, 2, Len(resultado) - 1)
+    Wend
+    subtrair = resultado
+End Function
+
+Function potencia(base As Integer, expoente As Integer) As String
+    Dim base_string As String
+    Dim temp As String
+    base_string = Trim(Str(base))
+    temp = "1"
+    If expoente = 0 Then GoTo final
+    For i = 1 To expoente
+        temp = multiplicar(temp, base_string)
+    Next i
+final:
+    potencia = temp
+End Function
+
+Function multiplicar(xxx As String, yyy As String) As String
+Dim a As String
+Dim b As String
+Dim c As String
+Dim linea(100) As String
+Dim i As Integer
+Dim j As Integer
+Dim k As Integer
+Dim tmp As Integer
+Dim vienen As Integer
+Dim resultado As String
+a = xxx
+b = yyy
+If Len(b) > Len(a) Then
+    c = a
+    a = b
+    b = c
+End If
+For i = 1 To Len(b)
+    linea(i) = String(i - 1, "0")
+    vienen = 0
+    For j = 1 To Len(a)
+        tmp = posicion(b, i) * posicion(a, j) + vienen
+        vienen = tmp \ 10
+        linea(i) = Trim(Str(tmp Mod 10)) & linea(i)
+    Next j
+    If vienen > 0 Then linea(i) = Trim(Str(vienen)) & linea(i)
+Next i
+vienen = 0
+For i = 1 To Len(b) + Len(a)
+    tmp = vienen
+    For j = 1 To Len(a)
+        tmp = tmp + posicion(linea(j), i)
+    Next j
+    vienen = tmp \ 10
+    resultado = Trim(Str(tmp Mod 10)) & resultado
+Next i
+If Left$(resultado, 1) = "0" Then
+    resultado = Mid$(resultado, 2, Len(resultado) - 1)
+End If
+multiplicar = resultado
+End Function
+Function posicion(z As String, x As Integer) As Integer
+    If x > Len(z) Then
+        posicion = 0
+    Else
+        posicion = Val(Mid$(z, Len(z) - x + 1, 1))
+    End If
+End Function
