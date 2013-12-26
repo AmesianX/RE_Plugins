@@ -7,7 +7,8 @@
 
 const int WM_DISPLAY_TEXT = 3;
 
-//this is a super quick and dirty demo of a C client..
+//consider this a rough poc, I am not really a fan of Java
+
 
 typedef struct{
     int dwFlag;
@@ -19,6 +20,14 @@ typedef struct{
 HWND hServer;
 WNDPROC oldProc;
 cpyData CopyData;
+
+static JNIEnv *g_env = NULL;
+static jobject g_obj = NULL;
+static JavaVM *g_jvm = NULL;
+
+DWORD uThreadId =0;
+int  threadInitilized = 0;
+HANDLE hThread=0;
 
 int  IDA_HWND=0;
 int  m_debug = 0;
@@ -119,11 +128,8 @@ char* ReceiveText(char* command, int hwnd){
 
 LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 		
-		if( uMsg != WM_COPYDATA) return 0;
-		if( lParam == 0) return 0;
-		
-		memcpy((void*)&CopyData, (void*)lParam, sizeof(cpyData));
-    
+	if( uMsg == WM_COPYDATA && lParam != 0){
+		memcpy((void*)&CopyData, (void*)lParam, sizeof(cpyData));    
 		if( CopyData.dwFlag == 3 ){
 			if( CopyData.cbSize >= sizeof(m_msg) ) CopyData.cbSize = sizeof(m_msg)-1;
 			memcpy((void*)&m_msg[0], (void*)CopyData.lpData, CopyData.cbSize);
@@ -134,8 +140,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 			}
 			received_response = true;
 		}
-			
-    return 0;
+	}
+    return CallWindowProc(oldProc, hwnd, uMsg, wParam, lParam);
 }
 
 JNIEXPORT jint JNICALL Java_JNITest_SendCMDRecvInt(JNIEnv *env, jobject obj, jstring javaString)
@@ -183,17 +189,69 @@ JNIEXPORT jstring JNICALL Java_JNITest_SendCMDRecvText(JNIEnv *env, jobject obj,
 
 }
 
+DWORD __stdcall CreateWndThread(LPVOID pThreadParam) 
+{
+	m_ServerHwnd = (int)CreateWindowA("EDIT","MESSAGE_WINDOW", 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	oldProc = (WNDPROC)SetWindowLongA((HWND)m_ServerHwnd, GWL_WNDPROC, (LONG)WindowProc);
+
+	jint nStatus = g_jvm->AttachCurrentThread(reinterpret_cast<void**>(&g_env), NULL);
+		 
+	threadInitilized = 1;
+
+	MSG Msg;
+	while(GetMessage(&Msg, 0, 0, 0)) {
+		TranslateMessage(&Msg);
+		DispatchMessage(&Msg);
+		if(threadInitilized==0){
+			jint detatch = g_jvm->DetachCurrentThread();
+			ExitThread(0);
+			return 0;
+		}
+	}
+	return Msg.wParam;
+
+}
+
+JNIEXPORT void JNICALL Java_JNITest_Shutdown(JNIEnv *env, jobject obj){
+	
+	start_color();
+	printf("JNI: Shutting down...\n");
+	end_color();
+
+	SetWindowLongA((HWND)m_ServerHwnd, GWL_WNDPROC, (LONG)oldProc);
+	DestroyWindow((HWND)m_ServerHwnd);
+	
+	g_env->DeleteGlobalRef(g_obj); 
+	threadInitilized=0;
+	TerminateThread(hThread,0);
+	
+	exit(0); //not sure why its not exiting on its own we will force it..
+
+}
+
 JNIEXPORT jint JNICALL Java_JNITest_InitHwnd(JNIEnv *env, jobject obj)
 {
  
+	g_env = env;
+	env->GetJavaVM(&g_jvm);
+
 	hConOut = GetStdHandle( STD_OUTPUT_HANDLE );
-	m_ServerHwnd = (int)CreateWindowA("EDIT","MESSAGE_WINDOW", 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	oldProc = (WNDPROC)SetWindowLongA((HWND)m_ServerHwnd, GWL_WNDPROC, (LONG)WindowProc);
+	start_color();
+
+	//this has to be in a new thread or you will get threadlock..especially if you try to use swing.
+	hThread = (HANDLE)CreateThread(NULL, 0, &CreateWndThread, NULL, 0, &uThreadId);
+	if(!hThread) 
+	{
+		printf("JNI: Fail creating thread");
+		return 0;
+	}
+	
+	g_obj = env->NewGlobalRef(obj); 
 	
 	IDA_HWND = (int)ReadReg(IDA_SERVER_NAME);
 	if(!IsWindow((HWND)IDA_HWND)) IDA_HWND = 0;
 
-	start_color();
+	while(threadInitilized==0){ Sleep(1); }; //cheesy delay tactic but ok for demo..
 
 	if( m_ServerHwnd == 0){
 		printf("JNI: Could not create listener window to receive data on\n");

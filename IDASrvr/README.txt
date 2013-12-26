@@ -4,9 +4,9 @@ this is a small plugin for IDA that will listen for messages through
 a WM_COPYDATA mechanism to allow remote control and data retrieval through
 it. 
 
-it registers its window handle in teh following regkey
+it registers its window handle in the following regkey
 
-Software\\VB and VBA Program Settings\\IPC\\Handles\IDA_SERVER
+HKCU\\Software\\VB and VBA Program Settings\\IPC\\Handles\IDA_SERVER
 
 It handles the following messages
 
@@ -42,6 +42,11 @@ It handles the following messages
 	   29 adddataxref:offset:tova
 	   30 delcodexref:offset:tova
 	   31 deldataxref:offset:tova
+	   32 funcindex:va:hwnd
+	   33 nextea:va:hwnd
+	   34 prevea:va:hwnd
+	   35 makestring:va:[ascii | unicode]
+	   36 makeunk:va:size
 
 
 Senders_ipc_server_name is looked up from the same regkey to get the hwnd to send
@@ -49,3 +54,5 @@ responses to.
 
 compiles with vs2008, make sure IDASDK envirnoment variable is set to your
 root sdk directory or you will have to fix include and lib directories in project.
+
+clients are provided for a variety of languages see sub directories.

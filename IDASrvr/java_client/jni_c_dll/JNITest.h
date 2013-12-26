@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 JNIEXPORT jint JNICALL Java_JNITest_InitHwnd(JNIEnv *, jobject);
+JNIEXPORT void JNICALL Java_JNITest_Shutdown(JNIEnv *, jobject);
 JNIEXPORT void JNICALL Java_JNITest_SendCMD(JNIEnv *, jobject, jstring);
 JNIEXPORT jint JNICALL Java_JNITest_SendCMDRecvInt(JNIEnv *, jobject, jstring);
 JNIEXPORT jstring JNICALL Java_JNITest_SendCMDRecvText(JNIEnv *, jobject, jstring);
