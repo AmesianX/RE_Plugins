@@ -405,14 +405,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 		memcpy((void*)&CopyData, (void*)lParam, sizeof(cpyData));
     
 		if( CopyData.dwFlag == 3 ){
-			if( CopyData.cbSize >= sizeof(m_msg) ) CopyData.cbSize = sizeof(m_msg)-1;
-			/*if( IsBadReadPtr((void*)CopyData.lpData, CopyData.cbSize)!=0){
-				msg("Bad read ptr %x", CopyData.lpData );
-				LeaveCriticalSection(&m_cs);
-				return 0;
-			}*/
+			if( CopyData.cbSize >= sizeof(m_msg) - 2 ) CopyData.cbSize = sizeof(m_msg) - 2;
+ 
 			memcpy((void*)&m_msg[0], (void*)CopyData.lpData, CopyData.cbSize);
-			if(m_debug)	msg("Message Received: %s \n", m_msg);  
+			m_msg[CopyData.cbSize] = 0; //always null terminate..
+
+			if(m_debug)	msg("Message Received: %s \n", m_msg); 
+
 			try{
 				HandleMsg(m_msg); 				    
 			}catch(...){ //remember this doesnt help any if we did anything that led to memory corruption...

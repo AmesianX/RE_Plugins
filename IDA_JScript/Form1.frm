@@ -87,11 +87,17 @@ Begin VB.Form Form1
    End
    Begin VB.Menu mnuTools 
       Caption         =   "Tools"
-      Begin VB.Menu mnuSHellExt 
-         Caption         =   "Register .idajs Shell Extension"
+      Begin VB.Menu mnuOpenScript 
+         Caption         =   "Open File"
       End
       Begin VB.Menu mnuSaveAs 
-         Caption         =   "File Save As"
+         Caption         =   "Save As"
+      End
+      Begin VB.Menu mnuSpacer1 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuSHellExt 
+         Caption         =   "Register .idajs Shell Extension"
       End
    End
 End
@@ -202,6 +208,16 @@ End Sub
 
 Private Sub ipc_SendTimedOut()
     List1.AddItem "Ipc Timeout"
+End Sub
+
+Private Sub mnuOpenScript_Click()
+    
+    Dim fpath As String
+    fpath = dlg.OpenDialog(AllFiles, , , Me.hwnd)
+    If Len(fpath) = 0 Then Exit Sub
+    
+    txtJS.Text = ida.ReadFile(fpath)
+    
 End Sub
 
 Private Sub mnuSaveAs_Click()

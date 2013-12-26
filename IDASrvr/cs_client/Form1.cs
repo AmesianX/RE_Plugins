@@ -53,5 +53,14 @@ namespace cs_client
  
           
         }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            try
+            {
+                listBox1.Width = this.Width - listBox1.Left - 20;
+            }
+            catch (Exception ex) { }
+        }
     }
 }
