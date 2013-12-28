@@ -19,10 +19,13 @@ namespace cs_client
         private string ResponseBuffer="";
         public int IDA_HWND = 0;
         private int MY_HWND = 0;
+        private uint IDASRVR_BROADCAST_MESSAGE = 0;
+        public Dictionary<uint, uint> Servers = new Dictionary<uint, uint>();
 
         public ida_client(IntPtr listen_hwnd)
         {
-            MY_HWND = (int)listen_hwnd;       
+            MY_HWND = (int)listen_hwnd;
+            IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage("IDA_SERVER");
         }
 
         private struct CopyDataStruct : IDisposable
@@ -40,6 +43,14 @@ namespace cs_client
                 }
             }
         }
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern uint RegisterWindowMessage(string lpString);
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool IsWindow(IntPtr hWnd);
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessageTimeout(uint hWnd, uint Msg, uint wParam, uint lParam, uint fuFlags, uint uTimeout, out uint lpdwResult);
 
         [DllImport("User32.dll")]
         private static extern Int32 SendMessage(int hWnd, int Msg, int wParam, [MarshalAs(UnmanagedType.LPStr)] string lParam);
@@ -82,6 +93,18 @@ namespace cs_client
         }
 
         public bool HandleWindowProc(ref Message m){
+
+            if (m.Msg == IDASRVR_BROADCAST_MESSAGE)
+            {
+                if (IsWindow(m.LParam))
+                {
+                    if(!ServerExists((uint)m.LParam))
+                    {
+                        Servers.Add((uint)m.LParam, (uint)m.LParam);
+                    }
+                }
+            }
+            
             if(m.Msg != WM_COPYDATA) return false;
             CopyDataStruct st = (CopyDataStruct)Marshal.PtrToStructure(m.LParam, typeof(CopyDataStruct));
             if((int)st.dwData != 3) return false;
@@ -89,6 +112,47 @@ namespace cs_client
             if(st.cbData < strData.Length) strData = strData.Substring(0, st.cbData);
             ResponseBuffer = strData;
             return true;
+        }
+
+        public List<uint> FindServers()
+        {
+            List<uint> ret = new List<uint>();
+            
+            uint r = 0;
+            uint HWND_BROADCAST = 0xFFFF;
+            SendMessageTimeout( HWND_BROADCAST, IDASRVR_BROADCAST_MESSAGE, (uint)MY_HWND, 0, 0, 1000, out r);
+
+            /*
+             so a client starts up, it gets the message to use (system wide) and it broadcasts a message to all windows
+             looking for IDASrvr instances that are active. It passes its command window hwnd as wParam
+             IDASrvr windows will receive this, and respond to the HWND with the same IDASRVR message as a pingback
+             sending thier command window hwnd as the lParam to register themselves with the clients.
+             clients track these hwnds.
+            */
+
+            foreach (uint hwnd in Servers.Values)
+            {
+                if (IsWindow((int)hwnd))
+                {
+                    ret.Add(hwnd);
+                }
+                else
+                {
+                    Servers.Remove(hwnd);
+                }
+            }
+
+            return ret;
+        }
+
+        private bool ServerExists(uint hwnd)
+        {
+            try
+            {
+                uint h = Servers[hwnd];
+                return h != 0 ? true : false;
+            }
+            catch (Exception e) { return false; }
         }
 
         private string ReceiveText(string cmd)
@@ -103,7 +167,7 @@ namespace cs_client
             return Convert.ToInt32(ResponseBuffer);
         }
 
-        public bool FindIDAHwnd()
+        public bool LastIDAHwndToOpen()
         {
             RegistryKey ida = Registry.CurrentUser.OpenSubKey("Software\\VB and VBA Program Settings\\IPC\\Handles");
             IDA_HWND = Convert.ToInt32(ida.GetValue("IDA_SERVER"));

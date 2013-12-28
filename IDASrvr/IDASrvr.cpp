@@ -47,6 +47,7 @@ bool m_debug = true;
 char m_msg[2020];
 cpyData CopyData;
 CRITICAL_SECTION m_cs;
+UINT IDASRVR_BROADCAST_MESSAGE=0;
 
 int __stdcall ImageBase(void);
 
@@ -398,6 +399,13 @@ void HandleMsg(char* m){
 
 LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 		
+		if( uMsg == IDASRVR_BROADCAST_MESSAGE){ //so clients can sent a broadcast to all windows with wparam of their command hwnd
+			if( IsWindow((HWND)wParam) ){       //we ping them back with with lParam = ServerHwnd to say were alive 
+				SendMessage((HWND)wParam, IDASRVR_BROADCAST_MESSAGE, 0, (LPARAM)ServerHwnd);
+			}
+			return 0;
+		}
+
 		if( uMsg != WM_COPYDATA) return 0;
 		if( lParam == 0) return 0;
 		
@@ -444,6 +452,7 @@ int idaapi init(void)
   ServerHwnd = CreateWindow("EDIT","MESSAGE_WINDOW", 0, 0, 0, 0, 0, 0, 0, 0, 0);
   oldProc = (WNDPROC)SetWindowLong(ServerHwnd, GWL_WNDPROC, (LONG)WindowProc);
   SetReg(IPC_NAME, (int)ServerHwnd);
+  IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage(IPC_NAME);
   InitializeCriticalSection(&m_cs);
   return PLUGIN_KEEP;
 }

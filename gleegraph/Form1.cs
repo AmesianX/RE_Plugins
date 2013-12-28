@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using Microsoft.Glee.Drawing;
 using System.Threading;
 using System.IO;
+using System.Diagnostics;
 
 namespace gleeGraph
 {
@@ -16,8 +17,9 @@ namespace gleeGraph
     {
         CGraph graph;
         Node selNode;
+        Node mouseOverNode;
         ida_client ida = null;
-        
+
         public void debugLog(string msg){
             lst.Items.Add(msg);
             lst.SelectedIndex = lst.Items.Count-1;
@@ -45,6 +47,7 @@ namespace gleeGraph
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            
             gViewer.SelectionChanged += new EventHandler(gViewer_SelectionChanged);
             gViewer.MouseUp += new MouseEventHandler(gViewer_MouseUp);
             gViewer.MouseWheel += new MouseEventHandler(gViewer_MouseWheel);
@@ -66,6 +69,8 @@ namespace gleeGraph
             string last = "c:\\lastGraph.txt";
             string f = "";
 
+            this.Visible = true;
+
             if (false && System.Diagnostics.Debugger.IsAttached)
             {
                 string testFile = Application.StartupPath + "\\test.txt";
@@ -82,10 +87,17 @@ namespace gleeGraph
 
                 if (File.Exists(f))
                 {
-                    if (File.Exists(last)) File.Delete(last);
-                    File.Copy(f, last);
-                    debugLog("Loading " + f);
-                    graph.LoadFile(f);
+                    try
+                    {
+                        if (File.Exists(last)) File.Delete(last);
+                        File.Copy(f, last);
+                        debugLog("Loading " + f);
+                        graph.LoadFile(f);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error loading: " + f + "\n\n" + ex.StackTrace);
+                    }
                 }
                 else if (File.Exists(last))
                 {
@@ -119,21 +131,21 @@ namespace gleeGraph
 
             if(gViewer.SelectedObject == null)
             {
-                if (selNode != null)
+                if (mouseOverNode != null && mouseOverNode != selNode)
                 {
-                    selNode.Attr.LineWidth = 1;
-                    selNode = null;     
+                    mouseOverNode.Attr.LineWidth = 1;
+                    mouseOverNode = null;     
                 }
             }
             else if(gViewer.SelectedObject is Node)
             {
-                if (selNode != null)
+                if (mouseOverNode != null && mouseOverNode != selNode)
                 {
                     //you could rig multiselect here by testing ctrl key and latter using linewidth as criteria..
-                    selNode.Attr.LineWidth = 1;
+                    mouseOverNode.Attr.LineWidth = 1;
                 }
-                selNode = (Node)gViewer.SelectedObject;
-                selNode.Attr.LineWidth = 3;
+                mouseOverNode = (Node)gViewer.SelectedObject;
+                mouseOverNode.Attr.LineWidth = 3;
                 gViewer.Refresh();
                 //debugLog("Selected node is " + selNode.Attr.Label.Trim());
             }
@@ -146,6 +158,18 @@ namespace gleeGraph
             //have to hot track with selectionChanged event or else select wont process in time for MouseUp...
             //a right click can even beat the selectionChanged event, so mouse over watch highlight, then rightclick :-\
             //must be a thread.invoke queing delay causing the problem in the glee control. 
+
+            if (mouseOverNode != null)
+            {
+                if (selNode != null)
+                {
+                    //you could rig multiselect here by testing ctrl key and latter using linewidth as criteria..
+                    selNode.Attr.LineWidth = 1;
+                    gViewer.Refresh();
+                }
+                selNode = mouseOverNode;
+            }
+
             if (e.Button == System.Windows.Forms.MouseButtons.Right)
             {
                 if (selNode != null) mnuPopup.Show(Cursor.Position);
@@ -205,6 +229,7 @@ namespace gleeGraph
             if (newName.Length == 0) return;
             if (ida.Rename(oldName, newName))
             {
+                lst.Items.Add("Rename( " + oldName + ", " + newName + ")");
                 selNode.Attr.Label = "   " + newName + "   ";
                 ListViewItem li = (ListViewItem)selNode.UserData;
                 li.Text = newName;
@@ -234,6 +259,10 @@ namespace gleeGraph
             if (prefix.Length == 0) return;
             
             List<Node> nodes = graph.NodesBelow(selNode);
+
+            if (MessageBox.Show("I am about to prefix " + nodes.Count + " nodes?", "Prefix Warning", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
+                return;
+
             foreach (Node n in nodes)
             {
                 string newName = prefix + n.Attr.Label.Trim();
@@ -259,6 +288,30 @@ namespace gleeGraph
                 gViewer.ZoomF = hScroll.Value;
             }
             catch (Exception ex) { }
+
+        }
+
+        private void originalWIngraphToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            string exeName = System.AppDomain.CurrentDomain.FriendlyName;
+
+            string orgExe = basePath + "\\_" + exeName;
+            string lastGraph = "c:\\lastgraph.txt";
+
+            if (!File.Exists(orgExe))
+            {
+                MessageBox.Show("Could not locate original executable did you prefix it with underscore?\n\n" + orgExe);
+                return;
+            }
+
+            if (!File.Exists(lastGraph))
+            {
+                MessageBox.Show("Could not locate lastGraph?\n\n" + lastGraph);
+                return;
+            }
+
+            Process.Start(orgExe, lastGraph);
 
         }
 

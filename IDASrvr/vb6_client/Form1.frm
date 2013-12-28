@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   5385
    ScaleWidth      =   10620
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command1 
+      Caption         =   "Active IDA Windows"
+      Height          =   315
+      Left            =   8100
+      TabIndex        =   2
+      Top             =   2340
+      Width           =   2355
+   End
    Begin VB.ListBox List2 
       BeginProperty Font 
          Name            =   "Courier"
@@ -19,10 +27,10 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   2700
+      Height          =   2460
       Left            =   60
       TabIndex        =   1
-      Top             =   2520
+      Top             =   2820
       Width           =   10455
    End
    Begin VB.ListBox List1 
@@ -54,17 +62,34 @@ Attribute VB_Exposed = False
 
 Dim ida As New CIDA
 
+Private Sub Command1_Click()
+    
+    FindActiveIDAWindows
+    
+    'If Servers.Count = 0 Then
+    '    MsgBox "No server windows have registered themselves.."
+    '    Exit Sub
+    'End If
+    
+    ida.ShowServers
+    
+End Sub
+
 Private Sub Form_Load()
     Dim va As Long
     
+    Me.Visible = True
+    
+    Hook Me.hwnd
+    List1.AddItem "Listening for messages on hwnd: " & Me.hwnd
+
+    'this is the original method which connects to the last IDA window opened.
+    'support is being added for multiple windows click on the find active windows button.
     If Not ida.FindClient() Then
         List1.AddItem "Could not find IDA Server hwnd."
         Exit Sub
     End If
-    
-    Hook Me.hwnd
-    List1.AddItem "Listening for messages on hwnd: " & Me.hwnd
-    
+        
     List1.AddItem "Loaded idb: " & ida.LoadedFile()
     List1.AddItem "NumFuncs: " & ida.NumFuncs()
     

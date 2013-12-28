@@ -4,9 +4,13 @@ this is a small plugin for IDA that will listen for messages through
 a WM_COPYDATA mechanism to allow remote control and data retrieval through
 it. 
 
-it registers its window handle in the following regkey
+There are two ways to find the IDASrvr to connect to. For simple cases
+the following registry key will always hold the last IDASRVR to open
 
-HKCU\\Software\\VB and VBA Program Settings\\IPC\\Handles\IDA_SERVER
+HKCU\Software\VB and VBA Program Settings\IPC\Handles\IDA_SERVER
+
+A mechanism also exists to locate all open IDASrvr windows by sending
+a broadcast message. See VB6 or C# clients for details.  
 
 It handles the following messages
 
@@ -14,7 +18,7 @@ It handles the following messages
 	   1 jmp:lngAdr
 	   2 jmp_name:function_name
 	   3 name_va:func_name:Senders_ipc_server_name (returns va for fxname)
-	  -4 rename:lngva:newname
+	   4 rename:lngva:newname
 	   5 loadedfile:Senders_ipc_HWND
 	   6 getasm:lngva:HWND
 	   7 jmp_rva:lng_rva
@@ -48,9 +52,6 @@ It handles the following messages
 	   35 makestring:va:[ascii | unicode]
 	   36 makeunk:va:size
 
-
-Senders_ipc_server_name is looked up from the same regkey to get the hwnd to send
-responses to.
 
 compiles with vs2008, make sure IDASDK envirnoment variable is set to your
 root sdk directory or you will have to fix include and lib directories in project.

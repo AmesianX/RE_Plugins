@@ -13,6 +13,12 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 'see IDA_JSCript for more this is a quick adaption for the demo..
 
+
+Function ShowServers() As Long
+    Form2.Show
+End Function
+ 
+
 Property Get LoadedFile() As String
     LoadedFile = SendCmdRecvText("loadedfile:" & Form1.hwnd)
 End Property
@@ -59,3 +65,5 @@ Function FindClient() As Boolean
     End If
     
 End Function
+
+ 

@@ -32,16 +32,26 @@ namespace cs_client
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            listBox1.Items.Add("Listener hwnd: " + this.Handle);
             ida = new ida_client(this.Handle);
 
-            if (!ida.FindIDAHwnd())
+            List<uint> servers = ida.FindServers();
+            listBox1.Items.Add("Found " + servers.Count + " IDA server windows");
+
+            foreach (uint hwnd in servers)
+            {
+                ida.IDA_HWND = (int)hwnd; //set which remote client to use..
+                listBox1.Items.Add("hwnd: " + hwnd + " idb: " + ida.LoadedFileName());
+            }
+
+            if (!ida.LastIDAHwndToOpen()) //automatically sets active IDA_HWND
             {
                 listBox1.Items.Add("IDA Server window not found...");
                 return;
             }
 
-            listBox1.Items.Add("Listener hwnd: " + this.Handle );
-            listBox1.Items.Add("IDA hwnd: " + ida.IDA_HWND );
+            listBox1.Items.Add("");
+            listBox1.Items.Add("Last IDA Hwnd To Open: " + ida.IDA_HWND);
             listBox1.Items.Add("File: " + ida.LoadedFileName() ) ;
             listBox1.Items.Add("#Funcs: " + ida.FuncCount());
 
@@ -49,8 +59,6 @@ namespace cs_client
             listBox1.Items.Add("Func[1] start: " + fStart.ToString("X") );
             listBox1.Items.Add("Func[1] end: " + ida.FuncEnd(1).ToString("X") );
             listBox1.Items.Add("Disasm @ 0x" + fStart.ToString("X") + ": " + ida.GetAsm(fStart));
-
- 
           
         }
 

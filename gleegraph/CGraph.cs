@@ -76,6 +76,7 @@ namespace gleeGraph
             string nodeMarker = "node:";
             string edgeMarker = "edge:";
             string colorentry = "colorentry";
+            int linkCount =0;
 
             foreach(string x in tmp){
                 if (x.Length > nodeMarker.Length && x.Substring(0, nodeMarker.Length) == nodeMarker)
@@ -113,6 +114,7 @@ namespace gleeGraph
                     if(s.Length > 0) tNode = GetNodeID(t);
                     if(sNode != null && tNode != null){
                         graph.AddEdge(sNode.Id, tNode.Id);
+                        linkCount++;
                     }
                 }
                 else if (x.Length > colorentry.Length && x.Substring(0, colorentry.Length) == colorentry)
@@ -134,7 +136,15 @@ namespace gleeGraph
                 MsgBox "Error in CGrapher.LoadFile: " & Err.Description, vbInformation
             End If*/
 
-            gViewer.Graph = graph;
+            try
+            {
+                gViewer.Graph = graph;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Error setting graph #Nodes=" + nodes.Count + " Links: " + linkCount);
+            }
+
             return;
 
         }
