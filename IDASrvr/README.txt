@@ -17,7 +17,7 @@ It handles the following messages
 	   0 msg:message
 	   1 jmp:lngAdr
 	   2 jmp_name:function_name
-	   3 name_va:func_name:Senders_ipc_server_name (returns va for fxname)
+	   3 name_va:fx_name:hwnd          (returns va for fxname)
 	   4 rename:lngva:newname
 	   5 loadedfile:Senders_ipc_HWND
 	   6 getasm:lngva:HWND

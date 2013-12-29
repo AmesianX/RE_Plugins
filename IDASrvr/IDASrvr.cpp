@@ -151,7 +151,7 @@ void HandleMsg(char* m){
 		0 msg:message
 		1 jmp:lngAdr
 		2 jmp_name:function_name
-		3 name_va:fx_name:hwnd(returns va for fxname)
+		3 name_va:fx_name:hwnd           (returns va for fxname)
 	    4 rename:oldname:newname:hwnd    (w/confirm: sends back 1 for success or 0 for fail)
 	    5 loadedfile:Senders_ipc_HWND
 	    6 getasm:lngva:HWND

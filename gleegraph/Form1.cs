@@ -10,6 +10,7 @@ using Microsoft.Glee.Drawing;
 using System.Threading;
 using System.IO;
 using System.Diagnostics;
+using System.Collections;
 
 namespace gleeGraph
 {
@@ -30,7 +31,7 @@ namespace gleeGraph
             InitializeComponent();
             gViewer.ZoomFraction = .02; //zoom increment smaller for smooth scrolling..
             mnuPopup.MouseLeave += new EventHandler(mnuPopup_MouseLeave);
-            graph = new CGraph(gViewer, lvNodes);
+            graph = new CGraph(gViewer, lvNodes, this);
         }
 
         protected override void WndProc(ref Message m)
@@ -54,17 +55,23 @@ namespace gleeGraph
             
             ida = new ida_client(this.Handle);
 
-            if (!ida.FindIDAHwnd())
+            List<uint> Servers = ida.FindServers();
+
+            if (Servers.Count == 0)
             {
                 debugLog("IDA not found...");
             }
-            else
+            else if (Servers.Count == 1)
             {
-                debugLog("IDA hwnd: " + ida.IDA_HWND );
+                ida.IDA_HWND = (int)Servers[0];
+                debugLog("IDA hwnd: " + ida.IDA_HWND);
                 debugLog("IDA File: " + Path.GetFileName(ida.LoadedFileName()));
             }
+            else
+            { 
+               debugLog(Servers.Count + " IDA windows open, will scan..");
+            }
 
-            
             string[] tmp = Environment.GetCommandLineArgs();
             string last = "c:\\lastGraph.txt";
             string f = "";
@@ -105,7 +112,61 @@ namespace gleeGraph
                     graph.LoadFile(last);
                 }
             }
-             
+
+            if (Servers.Count > 1)  //multiple IDA servers active, lets try to find the right one..
+            { 
+                uint target = FindServerForGraph(Servers);
+                if (target == 0)
+                {
+                    debugLog("No IDA match not found.");
+                }
+                else
+                {
+                    ida.IDA_HWND = (int)target;
+                    debugLog("IDA hwnd: " + ida.IDA_HWND);
+                    debugLog("IDA File: " + Path.GetFileName(ida.LoadedFileName()));
+                }
+            }
+
+            lvNodes.Columns[0].Text = "Nodes: ( " + gViewer.Graph.NodeMap.Count + " )";
+
+        }
+
+        uint FindServerForGraph(List<uint> windows)
+        {
+            Dictionary<uint, int> Results = new Dictionary<uint, int>();
+            Hashtable Nodes = gViewer.Graph.NodeMap;
+            foreach (uint hwnd in windows) //cycle through each server found..
+            {
+                ida.IDA_HWND = (int)hwnd; //set active hwnd to send data to..
+                int matches = 0, misses = 0;
+                foreach (Node n in Nodes.Values) 
+                {
+                    int va = ida.FuncVA(n.Attr.Label.Trim());
+                    if (va != 0) matches++; else misses++;
+                    if (misses == 2) break; //not all nodes in a graph are necessarily functions we can lookup such as .textxxx dd offset sub_xxx
+                    if (matches == 4)
+                    {
+                        debugLog("4 funcs found: " + hwnd);
+                        return hwnd;      //this is enough to say its a match..
+                    }
+                }
+                Results.Add(hwnd, matches);
+            }
+
+            //but if there were less than 4 functions in the graph now, or > 2 misses we will select best possibility..
+            int max = 0;
+            uint top_hwnd = 0;
+            foreach (KeyValuePair<uint,int> entry in Results)
+            {
+                if (entry.Value > max){
+                    max = entry.Value;
+                    top_hwnd = entry.Key;
+                }
+            }
+
+            debugLog(max + " funcs found: " + top_hwnd);
+            return max == 0 ? 0 : top_hwnd;
 
         }
 
@@ -145,7 +206,7 @@ namespace gleeGraph
                     mouseOverNode.Attr.LineWidth = 1;
                 }
                 mouseOverNode = (Node)gViewer.SelectedObject;
-                mouseOverNode.Attr.LineWidth = 3;
+                mouseOverNode.Attr.LineWidth = 2;
                 gViewer.Refresh();
                 //debugLog("Selected node is " + selNode.Attr.Label.Trim());
             }
@@ -165,9 +226,13 @@ namespace gleeGraph
                 {
                     //you could rig multiselect here by testing ctrl key and latter using linewidth as criteria..
                     selNode.Attr.LineWidth = 1;
+                    selNode.Attr.Fontcolor = Microsoft.Glee.Drawing.Color.Black;
                     gViewer.Refresh();
                 }
                 selNode = mouseOverNode;
+                selNode.Attr.Fontcolor = Microsoft.Glee.Drawing.Color.Blue;
+                selNode.Attr.LineWidth = 3;
+                gViewer.Refresh();
             }
 
             if (e.Button == System.Windows.Forms.MouseButtons.Right)
@@ -198,9 +263,14 @@ namespace gleeGraph
         private void lvNodes_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
         {
 
-            if (selNode != null) selNode.Attr.LineWidth = 1;
+            if (selNode != null)
+            {
+                selNode.Attr.LineWidth = 1;
+                selNode.Attr.Fontcolor = Microsoft.Glee.Drawing.Color.Black;
+            }
             selNode = (Node)e.Item.Tag;
             selNode.Attr.LineWidth = 3;
+            selNode.Attr.Fontcolor = Microsoft.Glee.Drawing.Color.Blue;
             ida.jmpName(selNode.Attr.Label);
             //gViewer.ShowBBox(selNode.BBox); //zoom to node..
             gViewer.Invalidate();

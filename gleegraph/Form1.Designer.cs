@@ -36,6 +36,7 @@
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadGraphToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.zoomAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.originalWIngraphToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuPopup = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.removeNodesBelowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -43,7 +44,7 @@
             this.lst = new System.Windows.Forms.ListBox();
             this.dlg = new System.Windows.Forms.OpenFileDialog();
             this.hScroll = new System.Windows.Forms.HScrollBar();
-            this.originalWIngraphToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pb = new System.Windows.Forms.ProgressBar();
             this.menuStrip1.SuspendLayout();
             this.mnuPopup.SuspendLayout();
             this.SuspendLayout();
@@ -110,16 +111,23 @@
             // loadGraphToolStripMenuItem
             // 
             this.loadGraphToolStripMenuItem.Name = "loadGraphToolStripMenuItem";
-            this.loadGraphToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.loadGraphToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
             this.loadGraphToolStripMenuItem.Text = "Load Graph";
             this.loadGraphToolStripMenuItem.Click += new System.EventHandler(this.loadGraphToolStripMenuItem_Click);
             // 
             // zoomAllToolStripMenuItem
             // 
             this.zoomAllToolStripMenuItem.Name = "zoomAllToolStripMenuItem";
-            this.zoomAllToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.zoomAllToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
             this.zoomAllToolStripMenuItem.Text = "Zoom All";
             this.zoomAllToolStripMenuItem.Click += new System.EventHandler(this.zoomAllToolStripMenuItem_Click);
+            // 
+            // originalWIngraphToolStripMenuItem
+            // 
+            this.originalWIngraphToolStripMenuItem.Name = "originalWIngraphToolStripMenuItem";
+            this.originalWIngraphToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+            this.originalWIngraphToolStripMenuItem.Text = "Original Wingraph";
+            this.originalWIngraphToolStripMenuItem.Click += new System.EventHandler(this.originalWIngraphToolStripMenuItem_Click);
             // 
             // mnuPopup
             // 
@@ -172,18 +180,19 @@
             this.hScroll.TabIndex = 5;
             this.hScroll.Scroll += new System.Windows.Forms.ScrollEventHandler(this.hScroll_Scroll);
             // 
-            // originalWIngraphToolStripMenuItem
+            // pb
             // 
-            this.originalWIngraphToolStripMenuItem.Name = "originalWIngraphToolStripMenuItem";
-            this.originalWIngraphToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-            this.originalWIngraphToolStripMenuItem.Text = "Original Wingraph";
-            this.originalWIngraphToolStripMenuItem.Click += new System.EventHandler(this.originalWIngraphToolStripMenuItem_Click);
+            this.pb.Location = new System.Drawing.Point(719, 34);
+            this.pb.Name = "pb";
+            this.pb.Size = new System.Drawing.Size(280, 10);
+            this.pb.TabIndex = 6;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1011, 610);
+            this.Controls.Add(this.pb);
             this.Controls.Add(this.hScroll);
             this.Controls.Add(this.gViewer);
             this.Controls.Add(this.lvNodes);
@@ -219,6 +228,7 @@
         private System.Windows.Forms.OpenFileDialog dlg;
         private System.Windows.Forms.HScrollBar hScroll;
         private System.Windows.Forms.ToolStripMenuItem originalWIngraphToolStripMenuItem;
+        public System.Windows.Forms.ProgressBar pb;
     }
 }
 

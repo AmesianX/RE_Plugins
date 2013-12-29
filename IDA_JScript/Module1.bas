@@ -1,4 +1,6 @@
 Attribute VB_Name = "Module1"
+Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
+
 Sub FormPos(fform As Form, Optional andSize As Boolean = False, Optional save_mode As Boolean = False)
     
     On Error Resume Next
@@ -28,4 +30,13 @@ End Sub
 
 Function GetMySetting(key, Optional defaultval = "")
     GetMySetting = GetSetting(App.EXEName, "Settings", key, defaultval)
+End Function
+
+Function KeyExistsInCollection(c As Collection, val As String) As Boolean
+    On Error GoTo nope
+    Dim t
+    t = c(val)
+    KeyExistsInCollection = True
+ Exit Function
+nope: KeyExistsInCollection = False
 End Function

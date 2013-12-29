@@ -44,9 +44,9 @@ Begin VB.Form Form1
             Strikethrough   =   0   'False
          EndProperty
          Height          =   1230
-         Left            =   720
+         Left            =   1020
          TabIndex        =   2
-         Top             =   1200
+         Top             =   360
          Visible         =   0   'False
          Width           =   8865
       End
@@ -67,6 +67,23 @@ Begin VB.Form Form1
          TabIndex        =   3
          Top             =   240
          Width           =   9615
+      End
+      Begin VB.Label lblIDB 
+         Caption         =   "Current IDB (null)"
+         BeginProperty Font 
+            Name            =   "Courier"
+            Size            =   9.75
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         Height          =   375
+         Left            =   2160
+         TabIndex        =   6
+         Top             =   1860
+         Width           =   6135
       End
    End
    Begin MSScriptControlCtl.ScriptControl sc 
@@ -96,6 +113,9 @@ Begin VB.Form Form1
       Begin VB.Menu mnuSpacer1 
          Caption         =   "-"
       End
+      Begin VB.Menu mnuSelectIDAInstance 
+         Caption         =   "Select Active IDA Instance"
+      End
       Begin VB.Menu mnuSHellExt 
          Caption         =   "Register .idajs Shell Extension"
       End
@@ -106,11 +126,11 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Dim ida As New CIDAScript
-Dim WithEvents ipc As CIpc
+Public ida As New CIDAScript
+Public WithEvents ipc As CIpc
 Attribute ipc.VB_VarHelpID = -1
-Dim dlg As New clsCmnDlg
-Dim fso As New CFileSystem2
+Public dlg As New clsCmnDlg
+Public fso As New CFileSystem2
 
 Private Sub Check1_Click()
     List1.Visible = CBool(Check1.Value)
@@ -148,7 +168,13 @@ Private Sub Form_Load()
     'Clipboard.SetText x
     'End
     
+    On Error Resume Next
+    
+    Dim hwnd As Long
+    Dim idb As String
+    
     FormPos Me, True
+    Me.Visible = True
     
     txtJS.WordWrap = True
     txtJS.LineIndentGuide = True
@@ -164,8 +190,23 @@ Private Sub Form_Load()
     End If
     
     If ida.isUp Then
-        List1.AddItem "IDA Server Up hwnd=" & ida.ipc.ClientHWND & " (0x" & Hex(ida.ipc.ClientHWND) & ")"
-        List1.AddItem "IDB: " & ida.LoadedFile
+        If ida.ipc.FindActiveIDAWindows > 1 Then
+            hwnd = Form2.SelectIDAInstance()
+            If hwnd <> 0 Then
+                ida.ipc.RemoteHWND = hwnd
+                idb = ida.LoadedFile
+                List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
+                List1.AddItem "IDB: " & idb
+                lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
+            End If
+        Else
+            idb = ida.LoadedFile
+            List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
+            List1.AddItem "IDB: " & idb
+            lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
+        End If
+    Else
+        List1.AddItem "No IDA Servers found, use Tools menu to select once started."
     End If
     
     List1.Move Text1.Left, Text1.Top, Text1.Width, Text1.Height
@@ -231,6 +272,20 @@ Private Sub mnuSaveAs_Click()
     If VBA.Right(fpath, Len(ext)) <> ext Then fpath = fpath & ext
     
     fso.WriteFile fpath, txtJS.Text
+    
+End Sub
+
+Private Sub mnuSelectIDAInstance_Click()
+    Dim hwnd As Long
+    Dim idb As String
+    
+    On Error Resume Next
+    hwnd = Form2.SelectIDAInstance()
+    If hwnd = 0 Then Exit Sub
+    
+    ida.ipc.RemoteHWND = hwnd
+    idb = ida.LoadedFile()
+    lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
     
 End Sub
 

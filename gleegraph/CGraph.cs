@@ -15,15 +15,17 @@ namespace gleeGraph
         ListView fxLv;
         GViewer gViewer;
         Graph graph;
+        Form1 parent;
         Dictionary<string, Node> nodes = new Dictionary<string,Node>();
         Dictionary<string, uint> Colors = new Dictionary<string,uint>();
 
         private StringComparison ic = StringComparison.CurrentCultureIgnoreCase;
 
-        public CGraph(GViewer gg, ListView lv)
+        public CGraph(GViewer gg, ListView lv, Form1 f)
         {
             fxLv = lv;
             gViewer = gg;
+            parent = f;
         }
 
         //no checking for circular references but no dups at least.
@@ -78,7 +80,16 @@ namespace gleeGraph
             string colorentry = "colorentry";
             int linkCount =0;
 
+            string orgTitle = parent.Text;
+
+            parent.Text = "Parsing graph definition..";
+            parent.pb.Value = 0;
+            parent.pb.Maximum = tmp.Length;
+
             foreach(string x in tmp){
+                
+                parent.pb.Value++;
+
                 if (x.Length > nodeMarker.Length && x.Substring(0, nodeMarker.Length) == nodeMarker)
                 {
                     //add a node  title: "0" label: "sub_4122CC" color: 76 textcolor: black
@@ -101,7 +112,7 @@ namespace gleeGraph
                         //if( c != Color.White) n.Attr.Fillcolor = getColorFromId(c);
                         //if( n.Attr.Fontcolor == n.Attr.Fillcolor) n.Attr.Fontcolor = Color.White;
                         nodes.Add("node:" + t, n);
-                         
+                        if (nodes.Count % 20 == 0) { parent.Refresh(); Application.DoEvents(); }                         
                     }
                 }
                 else if (x.Length > edgeMarker.Length && x.Substring(0, edgeMarker.Length) == edgeMarker)
@@ -129,21 +140,20 @@ namespace gleeGraph
                     }
                 }
             }
-            
-            
-            
-            /*If Err.Number <> 0 Then
-                MsgBox "Error in CGrapher.LoadFile: " & Err.Description, vbInformation
-            End If*/
+
+            parent.Text = "Rendering graph..";
 
             try
             {
-                gViewer.Graph = graph;
+                gViewer.Graph = graph; //the rendering takes quite a while.. the parsing/adding nodes above is almost instant..
             }
             catch (Exception e)
             {
                 MessageBox.Show("Error setting graph #Nodes=" + nodes.Count + " Links: " + linkCount);
             }
+
+            parent.Text = orgTitle;
+            parent.pb.Value = 0;
 
             return;
 
