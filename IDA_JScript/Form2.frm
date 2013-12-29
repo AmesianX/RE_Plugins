@@ -66,7 +66,7 @@ Public Function SelectIDAInstance() As Long
         Exit Function
         
     ElseIf cnt = 1 Then
-        SelectIDAInstance = Form1.ida.ipc.Servers(0)
+        SelectIDAInstance = Form1.ida.ipc.Servers(1)
         Unload Me
         Exit Function
         

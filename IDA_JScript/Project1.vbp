@@ -1,8 +1,8 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Reference=*\G{60FF6824-F68B-4DF1-9ECF-6F0893AAD2B8}#1.2#0#C:\Program Files\Sleuth\spSubclass.dll#SandSprite_SubClass Component
+Reference=*\G{60FF6824-F68B-4DF1-9ECF-6F0893AAD2B8}#1.2#0#C:\WINDOWS\spsubclass.dll#SandSprite_SubClass Component
 Object={0E59F1D2-1FBE-11D0-8FF2-00A0D10038BC}#1.0#0; msscript.ocx
-Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.5#0#C:\WINDOWS\vbDevKit.dll#Vb Developers Library From Sandsprite.com
+Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.5#0#C:\WINDOWS\vbdevkit.dll#Vb Developers Library From Sandsprite.com
 Object={3232B1EB-33A0-4C34-8630-0BE048BB46F2}#1.0#0; SCIVBX.ocx
 Form=Form1.frm
 UserControl=ucScint.ctl

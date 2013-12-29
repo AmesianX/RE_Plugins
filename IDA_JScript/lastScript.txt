@@ -3,13 +3,17 @@
 
 
 y='';
-va = 0x00401830;
+va = 0x401830;
 for(i=0;i<5;i++){
-   sz = ida.instsize(va);
+   x = ida.instsize(va);
    y+= h(va) + " " + ida.getasm(va) + "\r\n";
-   va+=sz;
+   va+=x;
 }
 t(y)
+
+
+
+
 
 
 

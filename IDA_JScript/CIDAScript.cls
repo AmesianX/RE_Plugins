@@ -133,30 +133,37 @@ Function GetAsm(va)
 End Function
 
 Function InstSize(offset)
-    'there has to be a real way to do this
-    Dim x As String, tmp As String, i As Long, n As String
-    Dim firstea As Long, secondea As Long
-    Dim leng As Long
-    
-    leng = 40
-    firstea = 0
-    secondea = 0
-    For i = 0 To leng - 1
-        tmp = GetAsm(offset + i)
-        If tmp = "Fail" Then tmp = Empty
-        If Len(tmp) > 0 Then
-            If firstea = 0 Then
-                firstea = offset + i
-            ElseIf secondea = 0 Then
-                 secondea = offset + i
-            End If
-            If firstea > 0 And secondea > 0 Then Exit For
-        End If
-    Next
-    
-    InstSize = secondea - firstea
-    
+    Dim n
+    n = NextEA(offset)
+    If n = 0 Then Exit Function
+    InstSize = n - offset
 End Function
+
+'Function InstSize(offset)
+'    'there has to be a real way to do this
+'    Dim x As String, tmp As String, i As Long, n As String
+'    Dim firstea As Long, secondea As Long
+'    Dim leng As Long
+'
+'    leng = 40
+'    firstea = 0
+'    secondea = 0
+'    For i = 0 To leng - 1
+'        tmp = GetAsm(offset + i)
+'        If tmp = "Fail" Then tmp = Empty
+'        If Len(tmp) > 0 Then
+'            If firstea = 0 Then
+'                firstea = offset + i
+'            ElseIf secondea = 0 Then
+'                 secondea = offset + i
+'            End If
+'            If firstea > 0 And secondea > 0 Then Exit For
+'        End If
+'    Next
+'
+'    InstSize = secondea - firstea
+'
+'End Function
 
 Function XRefsTo(offset) 'returns CSV list
     Dim tmp
