@@ -1,5 +1,7 @@
 Attribute VB_Name = "Module1"
 Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
+Global dlg As New clsCmnDlg
+Global fso As New CFileSystem2
 
 Sub FormPos(fform As Form, Optional andSize As Boolean = False, Optional save_mode As Boolean = False)
     

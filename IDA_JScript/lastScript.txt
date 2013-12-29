@@ -1,9 +1,12 @@
 
+
+
+
 y='';
-va = 0x00401D42;
+va = 0x00401830;
 for(i=0;i<5;i++){
    sz = ida.instsize(va);
-   y+= h(va) + "     " + ida.getasm(va) + "\r\n";
+   y+= h(va) + " " + ida.getasm(va) + "\r\n";
    va+=sz;
 }
 t(y)

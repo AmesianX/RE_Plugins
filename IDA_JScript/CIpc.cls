@@ -13,19 +13,11 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-'NOTE: the timeout and waitfordone flags are used for xref messages which come in over and over again
-'until a DONE message is received.
-
 Private WithEvents sc As clsSubClass
 Attribute sc.VB_VarHelpID = -1
-Private WithEvents tmr As CTimer
-Attribute tmr.VB_VarHelpID = -1
 
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-'Private Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
-Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExA" (ByVal dwExStyle As Long, ByVal lpClassName As String, ByVal lpWindowName As String, ByVal dwStyle As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, lpParam As Any) As Long
-Private Declare Function DestroyWindow Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function RegisterWindowMessage Lib "user32" Alias "RegisterWindowMessageA" (ByVal lpString As String) As Long
 Private Declare Function SendMessageTimeout Lib "user32" Alias "SendMessageTimeoutA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal fuFlags As Long, ByVal uTimeout As Long, lpdwResult As Long) As Long
  
@@ -39,15 +31,9 @@ Private Const WM_COPYDATA = &H4A
 Private Const HWND_BROADCAST = &HFFFF&
 Private IDASRVR_BROADCAST_MESSAGE As Long
 
-Event DataReceived(msg As String) 'only raised when not in blocking mode
-Event SendTimedOut()              'only sent for first timeout until TimedOut var reset to false
-Event DataSend(msg As String, isBlocking As Boolean)
-Event Error(msg As String)
-
 Public Servers As New Collection
 Public RemoteHWND As Long
 Private subclassed_hwnd As Long
-Private myWindow As Long
 Public ServerName As String
          
 Public timeout As Long
@@ -62,29 +48,15 @@ Property Get IamListening() As Boolean
     IamListening = isListening
 End Property
 
-Function Listen(Optional name As String, Optional hwnd As Long) As String
+Function Listen(hwnd As Long) As String
 
     If isListening Then Exit Function
+     
+    subclassed_hwnd = hwnd
     
-    If hwnd = 0 Then
-        subclassed_hwnd = CreateWindowEx(0&, "STATIC", "MESSAGE_WINDOW", 0&, 0&, 0&, 0&, 0&, 0&, 0&, App.hInstance, ByVal 0&)
-        myWindow = subclassed_hwnd
-    Else
-        subclassed_hwnd = hwnd
-        myWindow = 0
-    End If
-    
-    If Len(name) > 0 Then ServerName = name
-    If Len(ServerName) = 0 Then Err.Raise 0, "CIPC::Listen", "Invalid ServerName!"
-    
-    If sc.AttachMessage(subclassed_hwnd, WM_COPYDATA) Then
-        SaveSetting "IPC", "Handles", ServerName, subclassed_hwnd
-        isListening = True
-    Else
-        Err.Raise 1, "CIPC::Listen", "Failed to subclass IPC window!"
-        isListening = False
-    End If
+    If Not sc.AttachMessage(subclassed_hwnd, WM_COPYDATA) Then Exit Function
         
+    isListening = True
     IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage("IDA_SERVER")
     sc.AttachMessage subclassed_hwnd, IDASRVR_BROADCAST_MESSAGE
     
@@ -108,7 +80,7 @@ Function FindActiveIDAWindows() As Long
      
  End Function
 
- Function ValidateActiveIDAWindows()
+ Private Function ValidateActiveIDAWindows()
      On Error Resume Next
      Dim x
      For Each x In Servers 'remove any that arent still valid..
@@ -118,55 +90,40 @@ Function FindActiveIDAWindows() As Long
      Next
  End Function
  
-Function ShutDown(Optional name As String)
-    Dim hwnd As Long
+Function SendCmdRecvText(msg As String) As String
+    Send msg
+    SendCmdRecvText = DataIn
+End Function
+ 
+Function SendCmdRecvInt(msg As String) As Long
+    On Error Resume Next
+    Send msg
+    SendCmdRecvInt = CLng(DataIn)
+End Function
+
+Function Send(msg As String)
+    On Error Resume Next
     
-    If Len(name) = 0 Then
-        hwnd = GetSetting("IPC", "Handles", ServerName)
-    Else
-        hwnd = subclassed_hwnd
+    DataIn = Empty
+    Dim Buffer(1 To 2048) As Byte
+    Dim CopyData As COPYDATASTRUCT
+    
+    If IsWindow(RemoteHWND) = 0 Then
+        Form1.List1.AddItem "SendData Invalid hwnd: " & RemoteHWND
+        Exit Function
     End If
     
-    sc.DetatchMessage subclassed_hwnd, WM_COPYDATA
-    sc.DetatchMessage subclassed_hwnd, IDASRVR_BROADCAST_MESSAGE
-    SaveSetting "IPC", "Handles", ServerName, 0
+    Form1.List1.AddItem "SendData: " & msg
     
-    If myWindow <> 0 Then
-        DestroyWindow myWindow
-        myWindow = 0
-    End If
-        
-End Function
-
-'blocking call
-Function SendAndRecv(msg As String) As String
-
-    If RemoteHWND = 0 Then Err.Raise 0, , "Call FindClient First"
-    If Len(ServerName) = 0 Then Err.Raise 0, , "Set ServerName First"
-    If subclassed_hwnd = 0 Then Err.Raise 0, , "Set subclassed_hwnd First"
-    
-    WaitForDone = False
-    InternalSend msg
-    WaitLoop
-    SendAndRecv = DataIn
+    CopyMemory Buffer(1), ByVal msg, Len(msg)
+    CopyData.dwFlag = 3
+    CopyData.cbSize = Len(msg) + 1
+    CopyData.lpData = VarPtr(Buffer(1))
+    SendMessage RemoteHWND, WM_COPYDATA, RemoteHWND, CopyData
     
 End Function
 
-'blocking call waits till DONE message is received from remote client
-Function SendAndRecvTillDone(msg As String) As String
-
-    If RemoteHWND = 0 Then Err.Raise 0, , "Call FindClient First"
-    If Len(ServerName) = 0 Then Err.Raise 0, , "Set ServerName First"
-    If subclassed_hwnd = 0 Then Err.Raise 0, , "Set subclassed_hwnd First"
-    
-    WaitForDone = True
-    InternalSend msg
-    WaitLoop
-    SendAndRecvTillDone = DataIn
-    
-End Function
-
-
+'finds a client by reg name lookup, sets it as remoteHWND if found
 Function FindClient(client As String) As Boolean
     Dim hwnd As Long
     On Error Resume Next
@@ -183,81 +140,39 @@ Function FindClient(client As String) As Boolean
     End If
 End Function
 
-Private Function InternalSend(msg As String) As Boolean
-    On Error Resume Next
-    
-    Dim Buffer(1 To 2048) As Byte
-    Dim CopyData As COPYDATASTRUCT
-    
-    If IsWindow(RemoteHWND) = 0 Then
-        RaiseEvent Error("Hwnd: " & Hex(RemoteHWND) & " does not exist")
-        InternalSend = False
-        Exit Function
-    End If
-    
-    RaiseEvent DataSend(msg, False)
-    
-    DataIn = Empty
-    CopyMemory Buffer(1), ByVal msg, Len(msg)
-    CopyData.dwFlag = 3
-    CopyData.cbSize = Len(msg) + 1
-    CopyData.lpData = VarPtr(Buffer(1))
-    SendMessage RemoteHWND, WM_COPYDATA, RemoteHWND, CopyData
-    InternalSend = True
-    
-End Function
-
-Function Send(msg As String) As Boolean
-    
-    If RemoteHWND = 0 Then Err.Raise 0, , "Call findClient First"
-    
-    WaitForDone = False
-    Send = InternalSend(msg)
-
-End Function
 
 Private Sub Class_Initialize()
     Set sc = New clsSubClass
-    Set tmr = New CTimer
 End Sub
 
-Private Sub Class_Terminate()
-    SaveSetting "IPC", "Handles", ServerName, 0
-    If myWindow <> 0 Then DestroyWindow subclassed_hwnd
-End Sub
+Function ShutDown()
+    isListening = False
+    sc.DetatchMessage subclassed_hwnd, WM_COPYDATA
+    sc.DetatchMessage subclassed_hwnd, IDASRVR_BROADCAST_MESSAGE
+End Function
 
 Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
+      
       Dim msg As String
     
       If wMsg = IDASRVR_BROADCAST_MESSAGE Then
         If IsWindow(lParam) = 1 Then
             If Not KeyExistsInCollection(Servers, "hwnd:" & lParam) Then
                 Servers.Add lParam, "hwnd:" & lParam
-                'Form1.List2.AddItem "New IDASrvr registering itself hwnd= " & lParam
             End If
         End If
      End If
      
       If wMsg = WM_COPYDATA Then
             If RecieveTextMessage(lParam, msg) Then
-                tmr.Reset
-                If msg = "DONE" Then
-                    WaitForDone = False
-                    msg = Empty
-                End If
-                If WaitForDone Then
-                    DataIn = DataIn & msg
-                Else
-                    DataIn = DataIn & msg
-                    RaiseEvent DataReceived(DataIn)
-                    tmr.Disable
-                End If
+                If msg = "DONE" Then msg = Empty
+                DataIn = DataIn & msg
             End If
       End If
             
 End Sub
 
-Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
+Private Function RecieveTextMessage(lParam As Long, ByRef msg As String) As Boolean
    
     Dim CopyData As COPYDATASTRUCT
     Dim Buffer(1 To 2048) As Byte
@@ -274,24 +189,9 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
         'heres where we work with the intercepted message
         msg = Temp
         RecieveTextMessage = True
+        Form1.List1.AddItem "RecvData: " & msg
     End If
     
 End Function
 
-Private Sub WaitLoop()
-    If timeout = 0 Then timeout = 3000
-    tmr.EnableTimer timeout
-    Do While Len(DataIn) = 0
-        DoEvents
-        If Not tmr.Enabled Then
-            If Not TimedOut Then RaiseEvent SendTimedOut
-            TimedOut = True
-            Exit Do
-        End If
-    Loop
-    tmr.Disable
-End Sub
-
-Private Sub tmr_Timer()
-    tmr.Disable
-End Sub
+ 

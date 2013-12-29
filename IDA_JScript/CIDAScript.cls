@@ -13,17 +13,17 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Public WithEvents ipc As CIpc
+Public ipc As CIpc
 Attribute ipc.VB_VarHelpID = -1
 
 Private Sub Class_Initialize()
     Set ipc = New CIpc
     ipc.FindClient "IDA_SERVER"
-    ipc.Listen "JScript", Form1.hwnd
+    ipc.Listen Form1.hwnd
 End Sub
 
 Property Get isUp() As Boolean
-    isUp = ipc.FindClient("IDA_SERVER")
+    isUp = IIf(IsWindow(ipc.RemoteHWND) = 1, True, False)
 End Property
 
 Function alert(msg)
@@ -51,13 +51,13 @@ Function MakeUnk(va, size)
 End Function
 
 Property Get LoadedFile() As String
-    LoadedFile = ipc.SendAndRecv("loadedfile:" & Form1.hwnd)
+    LoadedFile = ipc.SendCmdRecvText("loadedfile:" & Form1.hwnd)
 End Property
 
 Property Get ImageBase() As Long
     On Error Resume Next
     Dim x
-    x = ipc.SendAndRecv("imgbase:" & Form1.hwnd)
+    x = ipc.SendCmdRecvInt("imgbase:" & Form1.hwnd)
     ImageBase = CLng(x)
 End Property
 
@@ -85,19 +85,18 @@ End Function
 Function PatchByte(va, newVal)
     If CInt(newVal) > 255 Then Err.Raise 1, "PatchByte", "byte value must be 0-254"
     ipc.Send "patchbyte:" & va & ":" & newVal
-    'Refresh
 End Function
 
 Function ReadByte(va)
     Dim x
-    x = ipc.SendAndRecv("readbyte:" & va & ":" & Form1.hwnd)
+    x = ipc.SendCmdRecvInt("readbyte:" & va & ":" & Form1.hwnd)
     If Len(x) > 2 Then x = Right(x, 2)
     ReadByte = CByte(CInt("&h" & x))
 End Function
 
 Function OriginalByte(va)
     Dim x
-    x = ipc.SendAndRecv("orgbyte:" & va & ":" & Form1.hwnd)
+    x = ipc.SendCmdRecvInt("orgbyte:" & va & ":" & Form1.hwnd)
     If Len(x) > 2 Then x = Right(x, 2)
     OriginalByte = CByte(CInt("&h" & x))
 End Function
@@ -114,23 +113,23 @@ Function Refresh()
 End Function
 
  Function NumFuncs() As Long
-    NumFuncs = ipc.SendAndRecv("numfuncs:" & Form1.hwnd)
+    NumFuncs = ipc.SendCmdRecvInt("numfuncs:" & Form1.hwnd)
  End Function
 
  Function FunctionStart(functionIndex)
-    FunctionStart = ipc.SendAndRecv("funcstart:" & functionIndex & ":" & Form1.hwnd)
+    FunctionStart = ipc.SendCmdRecvInt("funcstart:" & functionIndex & ":" & Form1.hwnd)
  End Function
 
  Function FunctionEnd(functionIndex)
-    FunctionEnd = ipc.SendAndRecv("funcend:" & functionIndex & ":" & Form1.hwnd)
+    FunctionEnd = ipc.SendCmdRecvInt("funcend:" & functionIndex & ":" & Form1.hwnd)
  End Function
  
  Function FunctionName(functionIndex)
-    FunctionName = ipc.SendAndRecv("funcname:" & functionIndex & ":" & Form1.hwnd)
+    FunctionName = ipc.SendCmdRecvInt("funcname:" & functionIndex & ":" & Form1.hwnd)
  End Function
 
 Function GetAsm(va)
-    GetAsm = ipc.SendAndRecv("getasm:" & va & ":" & Form1.hwnd)
+    GetAsm = ipc.SendCmdRecvText("getasm:" & va & ":" & Form1.hwnd)
 End Function
 
 Function InstSize(offset)
@@ -159,18 +158,20 @@ Function InstSize(offset)
     
 End Function
 
-Function GetRefsTo(offset) 'returns CSV list
+Function XRefsTo(offset) 'returns CSV list
     Dim tmp
-    tmp = ipc.SendAndRecvTillDone("refsto:" & offset & ":" & Form1.hwnd)
+    tmp = ipc.SendCmdRecvText("refsto:" & offset & ":" & Form1.hwnd)
+    If Right(tmp, 1) = "," Then tmp = Mid(tmp, 1, Len(tmp) - 1)
     'tmp = Split(tmp, ",") javascript cant deal with string() must be variant()?
-    GetRefsTo = tmp
+    XRefsTo = tmp
 End Function
 
-Function GetRefsFrom(offset) 'returns CSV list
+Function XRefsFrom(offset) 'returns CSV list
     Dim tmp
-    tmp = ipc.SendAndRecvTillDone("refsfrom:" & offset & ":" & Form1.hwnd)
+    tmp = ipc.SendCmdRecvText("refsfrom:" & offset & ":" & Form1.hwnd)
+    If Right(tmp, 1) = "," Then tmp = Mid(tmp, 1, Len(tmp) - 1)
     'tmp = Split(tmp, ",") javascript cant deal with string() must be variant()?
-    GetRefsFrom = tmp
+    XRefsFrom = tmp
 End Function
 
 Function Undefine(offset)
@@ -178,7 +179,7 @@ Function Undefine(offset)
 End Function
 
 Function GetName(offset)
-    GetName = ipc.SendAndRecv("getname:" & offset & ":" & Form1.hwnd)
+    GetName = ipc.SendCmdRecvText("getname:" & offset & ":" & Form1.hwnd)
 End Function
 
 Function ShowEA(offset)
@@ -225,7 +226,7 @@ Sub AddComment(offset, comment)
 End Sub
 
 Function GetComment(offset)
-    GetComment = ipc.SendAndRecv("getcomment:" & offset & ":" & Form1.hwnd)
+    GetComment = ipc.SendCmdRecvText("getcomment:" & offset & ":" & Form1.hwnd)
     If GetComment = "NULL" Then GetComment = Empty
 End Function
 
@@ -247,19 +248,19 @@ End Function
  End Sub
 
 Function FuncIndexFromVA(va)
-    FuncIndexFromVA = ipc.SendAndRecv("funcindex:" & va & ":" & Form1.hwnd)
+    FuncIndexFromVA = ipc.SendCmdRecvInt("funcindex:" & va & ":" & Form1.hwnd)
 End Function
 
 Function FuncVAByName(name)
-    FuncVAByName = ipc.SendAndRecv("name_va:" & name & ":" & Form1.hwnd)
+    FuncVAByName = ipc.SendCmdRecvInt("name_va:" & name & ":" & Form1.hwnd)
 End Function
 
 Function NextEA(va)
-    NextEA = ipc.SendAndRecv("nextea:" & va & ":" & Form1.hwnd)
+    NextEA = ipc.SendCmdRecvInt("nextea:" & va & ":" & Form1.hwnd)
 End Function
 
 Function PrevEA(va)
-    PrevEA = ipc.SendAndRecv("prevea:" & va & ":" & Form1.hwnd)
+    PrevEA = ipc.SendCmdRecvInt("prevea:" & va & ":" & Form1.hwnd)
 End Function
 
 
@@ -380,3 +381,4 @@ End Function
 '    Next
 '    refListToArray = y
 'End Function
+ 

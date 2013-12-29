@@ -127,10 +127,6 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Public ida As New CIDAScript
-Public WithEvents ipc As CIpc
-Attribute ipc.VB_VarHelpID = -1
-Public dlg As New clsCmnDlg
-Public fso As New CFileSystem2
 
 Private Sub Check1_Click()
     List1.Visible = CBool(Check1.Value)
@@ -162,16 +158,11 @@ End Sub
 
 Private Sub Form_Load()
     
-    'Dim x
-    'x = LCase(Clipboard.GetText)
-    'Clipboard.Clear
-    'Clipboard.SetText x
-    'End
-    
     On Error Resume Next
     
     Dim hwnd As Long
     Dim idb As String
+    Dim windows As Long
     
     FormPos Me, True
     Me.Visible = True
@@ -189,31 +180,29 @@ Private Sub Form_Load()
         txtJS.Text = ida.ReadFile(App.path & "\lastScript.txt")
     End If
     
-    If ida.isUp Then
-        If ida.ipc.FindActiveIDAWindows > 1 Then
-            hwnd = Form2.SelectIDAInstance()
-            If hwnd <> 0 Then
-                ida.ipc.RemoteHWND = hwnd
-                idb = ida.LoadedFile
-                List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
-                List1.AddItem "IDB: " & idb
-                lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
-            End If
-        Else
+    windows = ida.ipc.FindActiveIDAWindows()
+    If windows = 0 Then
+        List1.AddItem "No open IDA Windows detected. Use Tools menu to connect latter."
+    ElseIf windows = 1 Then
+        ida.ipc.RemoteHWND = ida.ipc.Servers(1)
+        idb = ida.LoadedFile
+        List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
+        List1.AddItem "IDB: " & idb
+        lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
+    Else
+        hwnd = Form2.SelectIDAInstance()
+        If hwnd <> 0 Then
+            ida.ipc.RemoteHWND = hwnd
             idb = ida.LoadedFile
             List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
             List1.AddItem "IDB: " & idb
             lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
         End If
-    Else
-        List1.AddItem "No IDA Servers found, use Tools menu to select once started."
     End If
     
     List1.Move Text1.Left, Text1.Top, Text1.Width, Text1.Height
-    
-    Set ipc = ida.ipc
-    
     Text1 = "Built in classes: ida. fso." & vbCrLf & "global functions alert(x), h(x) [int to hex], t(x) [append textbox with x]"
+    
 End Sub
 
 
@@ -232,24 +221,16 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
     FormPos Me, True, True
-    ida.WriteFile App.path & "\lastScript.txt", txtJS.Text
+    If Len(txtJS.Text) > 2 Then ida.WriteFile App.path & "\lastScript.txt", txtJS.Text
 End Sub
 
-Private Sub ipc_DataReceived(msg As String)
-    List1.AddItem "Ipc Data: " & msg
-End Sub
-
-Private Sub ipc_DataSend(msg As String, isBlocking As Boolean)
-    List1.AddItem "Ipc Send: " & msg & " Blocking: " & isBlocking
-End Sub
-
-Private Sub ipc_Error(msg As String)
-    List1.AddItem "IPC Error: " & msg
-End Sub
-
-Private Sub ipc_SendTimedOut()
-    List1.AddItem "Ipc Timeout"
-End Sub
+'Private Sub ipc_DataReceived(msg As String)
+'
+'End Sub
+'
+'Private Sub ipc_DataSend(msg As String)
+'    List1.AddItem "Ipc Send: " & msg
+'End Sub
 
 Private Sub mnuOpenScript_Click()
     
@@ -330,8 +311,8 @@ Private Sub txtJS_AutoCompleteEvent(className As String)
     ElseIf className = "ida" Then
         'do i want to break these up into smaller chunkcs for intellisense?
         txtJS.ShowAutoComplete "imagebase loadedfile jump patchbyte orginalbyte readbyte inttohex refresh() " & _
-                               "numfuncs() functionstart functionend functionname getasm instsize getrefsto " & _
-                               "getrefsfrom undefine getname " & _
+                               "numfuncs() functionstart functionend functionname getasm instsize xrefsto " & _
+                               "xrefsfrom undefine getname " & _
                                "hideea showea hideblock showblock removename setname makecode " & _
                                "getcomment addcomment addcodexref adddataxref delcodexref deldataxref " & _
                                "funcindexfromva funcvabyname nextea prevea patchstring makestr makeunk"

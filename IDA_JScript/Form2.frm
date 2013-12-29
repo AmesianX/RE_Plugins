@@ -76,8 +76,8 @@ Public Function SelectIDAInstance() As Long
                 Form1.ida.ipc.Servers.Remove "hwnd:" & x
             Else
                 Form1.ida.ipc.RemoteHWND = CLng(x)
-                pth = Form1.ida.ipc.SendAndRecv("loadedfile:" & Form1.hwnd)
-                pth = Form1.fso.FileNameFromPath(pth)
+                pth = Form1.ida.LoadedFile
+                pth = fso.FileNameFromPath(pth)
                 List1.AddItem x & ": " & pth
             End If
         Next
