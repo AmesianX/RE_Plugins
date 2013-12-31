@@ -8,7 +8,15 @@ Begin VB.Form Form2
    LinkTopic       =   "Form2"
    ScaleHeight     =   3195
    ScaleWidth      =   8670
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton cmdSelect 
+      Caption         =   "Select"
+      Height          =   375
+      Left            =   7320
+      TabIndex        =   1
+      Top             =   2640
+      Width           =   1215
+   End
    Begin VB.ListBox List1 
       BeginProperty Font 
          Name            =   "Courier New"
@@ -31,21 +39,62 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Private Sub Form_Load()
-  
-    Dim x
-    For Each x In Servers 'remove any that arent still valid..
-        If IsWindow(x) = 0 Then
-            Servers.Remove "hwnd:" & x
-        Else
-            List1.AddItem "hwnd: " & x & " --> " & SendCmdRecvText("loadedfile:" & Form1.hwnd, x)
-        End If
-    Next
+ 
+
+Public Function SelectIDAInstance(Optional refresh As Boolean = True) As Long
     
+    Dim x
+    Dim cnt As Long
+    Dim pth As String
+    
+    On Error Resume Next
+    
+    If refresh Then
+        cnt = FindActiveIDAWindows
+    Else
+        cnt = Servers.Count
+    End If
+    
+    If cnt = 0 Then
+        SelectIDAInstance = 0
+        Unload Me
+        Exit Function
+        
+    ElseIf cnt = 1 Then
+        SelectIDAInstance = Servers(1)
+        Unload Me
+        Exit Function
+        
+    Else
+       For Each x In Servers 'remove any that arent still valid..
+            If IsWindow(x) = 0 Then
+                Servers.Remove "hwnd:" & x
+            Else
+                IDA_HWND = CLng(x)
+                pth = Form1.ida.LoadedFile
+                pth = fso.FileNameFromPath(pth)
+                List1.AddItem x & ": " & pth
+            End If
+        Next
+        List1.ListIndex = 0
+    End If
+    
+    Me.Show 1, Form1
+    
+    Dim sel
+    sel = List1.List(List1.ListIndex)
+    a = InStr(sel, ":")
+    If a > 0 Then
+        sel = Mid(sel, 1, a - 1)
+    End If
+    
+    SelectIDAInstance = CLng(sel)
+    Unload Me
+    
+End Function
+
+Private Sub cmdSelect_Click()
+    Me.Hide
 End Sub
 
-Private Sub Form_Resize()
-    On Error Resume Next
-    List1.Width = Me.Width - List1.Left - 200
-    List1.Height = Me.Height - List1.Top - 200
-End Sub
+

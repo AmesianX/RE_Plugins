@@ -1,8 +1,10 @@
 
 
+va = ida.funcvabyname("start") 
+alert(h(va))
+alert(  ida.RenameFunc("start","start1")  )
 
-
-y='';
+/*y='';
 va = 0x401830;
 for(i=0;i<5;i++){
    x = ida.instsize(va);
@@ -10,6 +12,18 @@ for(i=0;i<5;i++){
    va+=x;
 }
 t(y)
+*/
+
+
+
+
+
+
+
+
+
+
+
 
 
 

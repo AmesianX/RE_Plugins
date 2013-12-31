@@ -28,7 +28,6 @@ End Type
      subclassed_hwnd = hwnd
      lpPrevWndProc = SetWindowLong(subclassed_hwnd, GWL_WNDPROC, AddressOf WindowProc)
      IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage("IDA_SERVER")
-     FindActiveIDAWindows
  End Sub
 
  Function FindActiveIDAWindows() As Long
@@ -40,7 +39,7 @@ End Type
      'clients track these hwnds.
      
      Form1.List2.AddItem "Broadcasting message looking for IDASrvr instances msg= " & IDASRVR_BROADCAST_MESSAGE
-     SendMessageTimeout HWND_BROADCAST, IDASRVR_BROADCAST_MESSAGE, subclassed_hwnd, 0, 0, 1000, ret
+     SendMessageTimeout HWND_BROADCAST, IDASRVR_BROADCAST_MESSAGE, subclassed_hwnd, 0, 0, 100, ret
      
      ValidateActiveIDAWindows
      FindActiveIDAWindows = Servers.Count
@@ -58,8 +57,9 @@ End Type
  End Function
  
  Public Sub Unhook()
-     Dim Temp As Long
-     Temp = SetWindowLong(subclassed_hwnd, GWL_WNDPROC, lpPrevWndProc)
+     If lpPrevWndProc <> 0 And subclassed_hwnd <> 0 Then
+            SetWindowLong subclassed_hwnd, GWL_WNDPROC, lpPrevWndProc
+     End If
  End Sub
 
  Function WindowProc(ByVal hw As Long, ByVal uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -118,7 +118,8 @@ Private Sub RecieveTextMessage(lParam As Long)
      
 End Sub
 
-Sub SendCMD(msg As String, Optional ByVal hwnd As Long)
+'returns the SendMessage return value which can be an int response.
+Function SendCMD(msg As String, Optional ByVal hwnd As Long) As Long
     Dim cds As COPYDATASTRUCT
     Dim buf(1 To 255) As Byte
     
@@ -131,10 +132,10 @@ Sub SendCMD(msg As String, Optional ByVal hwnd As Long)
     cds.dwFlag = 3
     cds.cbSize = Len(msg) + 1
     cds.lpData = VarPtr(buf(1))
-    i = SendMessage(hwnd, WM_COPYDATA, subclassed_hwnd, cds)
+    SendCMD = SendMessage(hwnd, WM_COPYDATA, subclassed_hwnd, cds)
     'since SendMessage is syncrnous if the command has a response it will be received before this returns..
     
-End Sub
+End Function
 
 Function SendCmdRecvText(cmd As String, Optional ByVal hwnd As Long) As String
     SendCMD cmd, hwnd
@@ -142,8 +143,6 @@ Function SendCmdRecvText(cmd As String, Optional ByVal hwnd As Long) As String
 End Function
 
 Function SendCmdRecvLong(cmd As String, Optional ByVal hwnd As Long) As Long
-    SendCMD cmd, hwnd
-    On Error Resume Next
-    SendCmdRecvLong = CLng(ResponseBuffer)
+    SendCmdRecvLong = SendCMD(cmd, hwnd)
 End Function
 

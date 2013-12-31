@@ -40,6 +40,7 @@ typedef struct{
     int lpData;
 } cpyData; 
 
+char baseKey[200] = "Software\\VB and VBA Program Settings\\IPC\\Handles";
 char *IPC_NAME = "IDA_SERVER";
 HWND ServerHwnd=0;
 WNDPROC oldProc=0;
@@ -73,10 +74,8 @@ int EaForFxName(char* fxName){
 	return 0;
 }
 
-
 HWND ReadReg(char* name){
 
-	 char baseKey[200] = "Software\\VB and VBA Program Settings\\IPC\\Handles";
 	 char tmp[20] = {0};
      unsigned long l = sizeof(tmp);
 	 HKEY h;
@@ -91,15 +90,19 @@ HWND ReadReg(char* name){
 
 void SetReg(char* name, int value){
 
-	 char baseKey[200] = "Software\\VB and VBA Program Settings\\IPC\\Handles";
 	 char tmp[20];
 
-	 HKEY ret;
+	 HKEY hKey;
+	 LONG lRes = RegOpenKeyEx(HKEY_CURRENT_USER, baseKey, 0, KEY_ALL_ACCESS, &hKey);
+
+	 if(lRes != ERROR_SUCCESS){
+		lRes = RegCreateKeyEx(HKEY_CURRENT_USER, baseKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL );
+	    if(lRes != ERROR_SUCCESS) return;
+	 }
+
 	 qsnprintf(tmp,200,"%d",value);
-	
-	 RegOpenKey(HKEY_CURRENT_USER, baseKey, &ret);
-	 RegSetValueEx(ret, name,0, REG_SZ, (const unsigned char*)tmp , strlen(tmp)); 
-	 RegCloseKey(ret);
+	 RegSetValueEx(hKey, name,0, REG_SZ, (const unsigned char*)tmp , strlen(tmp)); 
+	 RegCloseKey(hKey);
 
 }
 
@@ -144,30 +147,33 @@ bool SendIntMessage(int hwnd, int resp){
 	return SendTextMessage(hwnd,tmp, strlen(tmp));
 }
 
-void HandleMsg(char* m){
+int HandleMsg(char* m){
 	/*  for responses we whould pass in hwnd and not bother with having to do lookup...
-		- marks not yet implemented. note all offsets/hwnds/indexes transfered as decimal
-
+		note all offsets/hwnds/indexes transfered as decimal
+		11 of these now have the callback hwnd optional [:hwnd] because I realized I can just use the 
+			SendMessage return value to return a int instead of an integer string data callback (duh!)
+			the old style is still supported so I dont break any code.
+			
 		0 msg:message
 		1 jmp:lngAdr
 		2 jmp_name:function_name
-		3 name_va:fx_name:hwnd           (returns va for fxname)
-	    4 rename:oldname:newname:hwnd    (w/confirm: sends back 1 for success or 0 for fail)
-	    5 loadedfile:Senders_ipc_HWND
-	    6 getasm:lngva:HWND
+		3 name_va:fx_name[:hwnd]          (returns va for fxname)
+	    4 rename:oldname:newname[:hwnd]   (w/confirm: sends back 1 for success or 0 for fail)
+	    5 loadedfile:hwnd
+	    6 getasm:lngva:hwnd
 	    7 jmp_rva:lng_rva
-	  	8 imgbase:Senders_ipc_HWND
+	  	8 imgbase[:hwnd]
 		9 patchbyte:lng_va:byte_newval
-	   10 readbyte:lngva:IPCHWND
-	   11 orgbyte:lngva:IPCHWND
+	   10 readbyte:lngva[:hwnd]
+	   11 orgbyte:lngva[:hwnd]
 	   12 refresh:
-	   13 numfuncs:IPCHWND
-	   14 funcstart:funcIndex:ipchwnd
-	   15 funcend:funcIndex:ipchwnd
-	   16 funcname:funcIndex:ipchwnd
+	   13 numfuncs[:hwnd]
+	   14 funcstart:funcIndex[:hwnd]
+	   15 funcend:funcIndex[:hwnd]
+	   16 funcname:funcIndex:hwnd
 	   17 setname:va:name
-	   18 refsto:offset:hwnd
-	   19 refsfrom:offset:hwnd
+	   18 refsto:offset:hwnd          //multiple call backs to hwnd each int as string, still synchronous
+	   19 refsfrom:offset:hwnd        //multiple call backs to hwnd each int as string, still synchronous
 	   20 undefine:offset
 	   21 getname:offset:hwnd
 	   22 hide:offset
@@ -180,9 +186,9 @@ void HandleMsg(char* m){
 	   29 adddataxref:offset:tova
 	   30 delcodexref:offset:tova
 	   31 deldataxref:offset:tova
-	   32 funcindex:va:hwnd
-	   33 nextea:va:hwnd
-	   34 prevea:va:hwnd
+	   32 funcindex:va[:hwnd]
+	   33 nextea:va[:hwnd]
+	   34 prevea:va[:hwnd]
 	   35 makestring:va:[ascii | unicode]
 	   36 makeunk:va:size
     */
@@ -210,6 +216,7 @@ void HandleMsg(char* m){
 	int i=0;
 	int argc=0;
 	int x=0;
+	int* zz = 0;
 
 	//split command string into args array
 	token = strtok(m,":");
@@ -241,22 +248,25 @@ void HandleMsg(char* m){
 				 jumpto(i);
 				 break;
 
-		case 3: //name_va:fx_name:hwnd  (returns va)
-				if(argc<2) msg("Invalid arg count to name_va");
+		case 3: //name_va:fx_name[:hwnd]  (returns va) hwnd optional - specify if want response as data callback default returns int 
 				i =  EaForFxName(args[1]);
-				SendIntMessage( atoi(args[2]), i);
+				if(argc == 2) SendIntMessage( atoi(args[2]), i);
+				return i;
 				break;
 		
-		case 4: //rename:oldname:newname:hwnd
+		case 4: //rename:oldname:newname[:hwnd]
 				i = EaForFxName(args[1]);
 				if(i==0){
-					SendIntMessage( atoi(args[3]), 0); //fail
+					if(argc == 3) SendIntMessage( atoi(args[3]), 0); //fail
+					return 0;
 					break;
 				}
 				if( set_name(i,args[2]) ){
-					SendIntMessage( atoi(args[3]), 1);
+					if(argc == 3) SendIntMessage( atoi(args[3]), 1);
+					return 1;
 				}else{
-					SendIntMessage( atoi(args[3]), 0);
+					if(argc == 3) SendIntMessage( atoi(args[3]), 0);
+					return 0;
 				}
 				break;
 
@@ -265,6 +275,12 @@ void HandleMsg(char* m){
 				SendTextMessage( atoi(args[1]), buf, strlen(buf) );
 				break;
 
+		case 6: //getasm:va:hwnd
+				  x = GetAsm(atoi(args[1]),buf,499);
+				  if(x==0) sprintf(buf,"Fail");
+				  SendTextMessage(atoi(args[2]),buf,strlen(buf));
+				  break;
+
 		case 7: 
 				i = ImageBase();  
 			    x = atoi(args[1]);
@@ -272,56 +288,64 @@ void HandleMsg(char* m){
 				jumpto(i+x);
 				break;
 
-		case 8: //imgbase:Senders_ipc_HWND
-				SendIntMessage( atoi(args[1]), ImageBase() );
+		case 8: //imgbase[:HWND]
+				i = ImageBase();  
+				if(argc == 1) SendIntMessage( atoi(args[1]), i );
+				return i;
 				break;
 
 		case 9: //patchbyte:lng_va:byte_newval
 				PatchByte( atoi(args[1]), atoi(args[2]) );
 				break;
 
-		case 10: //readbyte:lngva:IPCHWND
+		case 10: //readbyte:lngva[:HWND]
 				GetBytes( atoi(args[1]), buf, 1); //on a patched byte this is reading a 4 byte int?
-				sprintf( tmp, "%x", buf[0]);
-				memset(&buf[1],0,4); 
-				SendTextMessage( atoi(args[2]),tmp, strlen(tmp) );
+				if(argc == 2){
+					sprintf( tmp, "%x", buf[0]);
+					memset(&buf[1],0,4); 
+					SendTextMessage( atoi(args[2]),tmp, strlen(tmp) );
+				}
+				zz = (int*)&buf;
+				return *zz & 0x000000FF ;
 				break;
 
-		case 11: //orgbyte:lngva:IPCHWND
+		case 11: //orgbyte:lngva[:HWND]
 				buf[0] = OriginalByte(atoi(args[1]));
-				sprintf( tmp, "%x", buf[0]);
-				SendTextMessage( atoi(args[2]),tmp, strlen(tmp) );
+				if(argc == 2){ 
+					sprintf( tmp, "%x", buf[0]);
+					SendTextMessage( atoi(args[2]),tmp, strlen(tmp) );
+				}
+				zz = (int*)&buf;
+				return *zz & 0x000000FF;
 				break;
 
 		case 12: //refresh:
 				 Refresh();
 				 break;
 
-		case 13: //numfuncs:IPCHWND
-				 SendIntMessage(atoi(args[1]), NumFuncs());
+		case 13: //numfuncs[:HWND]
+				 i = NumFuncs();
+				 if(argc == 1) SendIntMessage(atoi(args[1]), i);
+				 return i;
 				 break;
 
-		case 14: //funcstart:funcIndex:ipchwnd
+		case 14: //funcstart:funcIndex[:hwnd]
 				 x = FunctionStart(atoi(args[1]));
-				 SendIntMessage(atoi(args[2]),x);
+				 if(argc == 2) SendIntMessage(atoi(args[2]),x);
+				 return x;
 				 break;
 
-		 case 15: //funcend:funcIndex:ipchwnd
+		 case 15: //funcend:funcIndex[:hwnd]
 				 x = FunctionEnd(atoi(args[1]));
-				 SendIntMessage(atoi(args[2]),x);
+				 if(argc == 2) SendIntMessage(atoi(args[2]),x);
+				 return x;
 				 break;
 
-		 case 16: //funcname:funcIndex:ipchwnd
+		 case 16: //funcname:funcIndex:hwnd
 			     x = FunctionStart(atoi(args[1]));
 				 FuncName(x,buf,499);
 				 SendTextMessage(atoi(args[2]),buf,strlen(buf));
 				 break;
-
-		 case 6: //getasm:va:hwnd
-				  x = GetAsm(atoi(args[1]),buf,499);
-				  if(x==0) sprintf(buf,"Fail");
-				  SendTextMessage(atoi(args[2]),buf,strlen(buf));
-				  break;
 
 		  case 17: //setname:va:name
 				  Setname( atoi(args[1]), args[2]);
@@ -371,17 +395,20 @@ void HandleMsg(char* m){
 		  case 31: //deldataxref:offset:tova
 				   DelDataXRef( atoi(args[1]), atoi(args[2]) );
 				   break;
-		  case 32: //funcindex:va:hwnd
+		  case 32: //funcindex:va[:hwnd]
 					x = get_func_num( atoi(args[1]) );
-					SendIntMessage( atoi(args[2]), x);
+					if( argc == 2 ) SendIntMessage( atoi(args[2]), x);
+					return x;
 					break;
-		  case 33: //nextea:va:hwnd  should this return null if it crosses function boundaries? yes probably...
+		  case 33: //nextea:va[:hwnd]  should this return null if it crosses function boundaries? yes probably...
 					x = find_code( atoi(args[1]), SEARCH_DOWN | SEARCH_NEXT );
-					SendIntMessage( atoi(args[2]), x);
+					if( argc == 2 )SendIntMessage( atoi(args[2]), x);
+					return x;
 					break;
-		  case 34: //prevea:va:hwnd  should this return null if it crosses function boundaries? yes probably...
+		  case 34: //prevea:va[:hwnd]  should this return null if it crosses function boundaries? yes probably...
 					x = find_code( atoi(args[1]), SEARCH_UP | SEARCH_NEXT );
-					SendIntMessage( atoi(args[2]), x);
+					if( argc == 2 ) SendIntMessage( atoi(args[2]), x);
+					return x;
 					break;
 		  case 35: //makestring:va:[ascii | unicode]
 					x = strcmp(args[2],"ascii") == 0 ? ASCSTR_TERMCHR : ASCSTR_UNICODE ;
@@ -409,6 +436,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 		if( uMsg != WM_COPYDATA) return 0;
 		if( lParam == 0) return 0;
 		
+		int retVal = 0;
 		EnterCriticalSection(&m_cs);
 		memcpy((void*)&CopyData, (void*)lParam, sizeof(cpyData));
     
@@ -421,7 +449,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 			if(m_debug)	msg("Message Received: %s \n", m_msg); 
 
 			try{
-				HandleMsg(m_msg); 				    
+				retVal = HandleMsg(m_msg); 				    
 			}catch(...){ //remember this doesnt help any if we did anything that led to memory corruption...
 				msg("Caught an Error in HandleMsg!");
 				if(!m_debug) msg("Message: %s \n", m_msg); 
@@ -431,7 +459,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
 		 
 	
 	LeaveCriticalSection(&m_cs);
-    return 0;
+    return retVal;
 }
 
 /*
@@ -459,10 +487,11 @@ int idaapi init(void)
 
 void idaapi term(void)
 {
-	try{
-		SetReg("IDA_SERVER", 0);
+	try{	
 		SetWindowLong(ServerHwnd, GWL_WNDPROC, (LONG)oldProc);
 		DestroyWindow(ServerHwnd);
+		HWND saved_hwnd = ReadReg("IDA_SERVER");
+		if( !IsWindow(saved_hwnd) ) SetReg("IDA_SERVER", 0); 
 	}
 	catch(...){};
 

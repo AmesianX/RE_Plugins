@@ -41,7 +41,7 @@ HWND ReadReg(char* name){ //todo support multiple IDA idb's and not just last on
 	 return (HWND)atoi(tmp);
 }
 
-bool SendTextMessage(int hwnd, char *Buffer, int blen) 
+int SendTextMessage(int hwnd, char *Buffer, int blen) 
 {
 		  char* nullString = "NULL";
 		  if(blen==0){ //in case they are waiting on a message with data len..
@@ -57,10 +57,10 @@ bool SendTextMessage(int hwnd, char *Buffer, int blen)
 		  cpStructData.cbSize = blen;
 		  cpStructData.lpData = (int)Buffer;
 		  cpStructData.dwFlag = 3;
-		  SendMessage((HWND)hwnd, WM_COPYDATA, (WPARAM)hwnd,(LPARAM)&cpStructData);  
-		  return true;
+		  return SendMessage((HWND)hwnd, WM_COPYDATA, (WPARAM)hwnd,(LPARAM)&cpStructData);  
 }  
 
+/*
 bool SendTextMessage(char* name, char *Buffer, int blen) 
 {
 		  HWND h = ReadReg(name);
@@ -71,15 +71,15 @@ bool SendTextMessage(char* name, char *Buffer, int blen)
 		  return SendTextMessage((int)h,Buffer,blen);
 }  
 
-
 bool SendIntMessage(char* name, int resp){
 	char tmp[30]={0};
 	sprintf(tmp, "%d", resp);
 	if(m_debug) printf("SendIntMsg(%s, %s)", name, tmp);
 	return SendTextMessage(name,tmp, sizeof(tmp));
 }
+*/
 
-bool SendIntMessage(int hwnd, int resp){
+int SendIntMessage(int hwnd, int resp){
 	char tmp[30]={0};
 	sprintf(tmp, "%d", resp);
 	if(m_debug) printf("SendIntMsg(%d, %s)", hwnd, tmp);
@@ -91,12 +91,16 @@ void HandleMsg(char* m){
 	printf("%s\n", m);
 }
 
-//these next 2 are a very simple implementation..SendMessage automatically blocks so this works...
+/* old method */		//these next 2 are a very simple implementation..SendMessage automatically blocks so this works...
 int ReceiveInt(char* command, int hwnd){
 	memset(m_msg,0,2020);
 	received_response = false;
 	SendTextMessage(hwnd,command,strlen(command)+1);
 	return atoi(m_msg);
+}
+
+int NewReceiveInt(char* command, int hwnd){
+	return SendTextMessage(hwnd,command,strlen(command)+1);
 }
 
 char* ReceiveText(char* command, int hwnd){
@@ -136,12 +140,16 @@ int main(int argc, char* argv[])
 	if(!IsWindow((HWND)IDA_HWND)) IDA_HWND = 0;
 
 	if( m_ServerHwnd == 0){
-		printf("Could not create listener window to receive data on exiting...");
+		printf("Could not create listener window to receive data on exiting...\n");
+		printf("Press any key to exit..");
+		getch();
 		return 0;
 	}
 
 	if( IDA_HWND==0 ){
-		printf("IDA Server window not found exiting...");
+		printf("IDA Server window not found exiting...\n");
+		printf("Press any key to exit..");
+		getch();
 		return 0;
 	}
 	
@@ -160,6 +168,9 @@ int main(int argc, char* argv[])
 	ret = ReceiveInt(buf, IDA_HWND);
 	printf("Function Count: %d\n", ret);
 
+	ret = NewReceiveInt("numfuncs", IDA_HWND);
+	printf("Function Count: %d  (new method)\n", ret);
+
 	sprintf(buf,"funcstart:1:%d", m_ServerHwnd);
 	int funcStart = ReceiveInt(buf, IDA_HWND);
 	printf("First Func Start: 0x%x\n", funcStart);
@@ -171,6 +182,9 @@ int main(int argc, char* argv[])
 	sprintf(buf,"getasm:%d:%d", funcStart, m_ServerHwnd);
 	sret = ReceiveText(buf,IDA_HWND); 	
     printf("First Func Disasm[0]: %s\n", sret);
+	
+	printf("Press any key to exit..");
+	getch();
 	
 	return 0;
 

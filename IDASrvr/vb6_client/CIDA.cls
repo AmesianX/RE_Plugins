@@ -24,20 +24,24 @@ Property Get LoadedFile() As String
 End Property
 
 Function NumFuncs() As Long
-    NumFuncs = SendCmdRecvLong("numfuncs:" & Form1.hwnd)
- End Function
+    NumFuncs = SendCmdRecvLong("numfuncs")
+End Function
 
- Function FunctionStart(functionIndex)
-    FunctionStart = SendCmdRecvLong("funcstart:" & functionIndex & ":" & Form1.hwnd)
- End Function
+Function FuncAddrFromName(funcName As String) As Long
+   FuncAddrFromName = SendCMD("name_va:" & funcName)
+End Function
 
- Function FunctionEnd(functionIndex)
-    FunctionEnd = SendCmdRecvLong("funcend:" & functionIndex & ":" & Form1.hwnd)
- End Function
+Function FunctionStart(functionIndex)
+    FunctionStart = SendCmdRecvLong("funcstart:" & functionIndex)
+End Function
+
+Function FunctionEnd(functionIndex)
+    FunctionEnd = SendCmdRecvLong("funcend:" & functionIndex)
+End Function
  
- Function FunctionName(functionIndex)
+Function FunctionName(functionIndex)
     FunctionName = SendCmdRecvText("funcname:" & functionIndex & ":" & Form1.hwnd)
- End Function
+End Function
 
 Function GetAsm(va)
     GetAsm = SendCmdRecvText("getasm:" & va & ":" & Form1.hwnd)
@@ -47,6 +51,7 @@ Function Jump(va As Long)
    SendCMD "jmp:" & va
 End Function
 
+'will find last opened instance if still active
 Function FindClient() As Boolean
     Dim hwnd As Long
     

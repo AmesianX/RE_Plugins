@@ -54,13 +54,6 @@ Property Get LoadedFile() As String
     LoadedFile = ipc.SendCmdRecvText("loadedfile:" & Form1.hwnd)
 End Property
 
-Property Get ImageBase() As Long
-    On Error Resume Next
-    Dim x
-    x = ipc.SendCmdRecvInt("imgbase:" & Form1.hwnd)
-    ImageBase = CLng(x)
-End Property
-
 Sub t(data As String)
     Form1.Text1.Text = Form1.Text1.Text & vbCrLf & data
     Form1.Text1.SelStart = Len(Form1.Text1.Text)
@@ -87,19 +80,7 @@ Function PatchByte(va, newVal)
     ipc.Send "patchbyte:" & va & ":" & newVal
 End Function
 
-Function ReadByte(va)
-    Dim x
-    x = ipc.SendCmdRecvInt("readbyte:" & va & ":" & Form1.hwnd)
-    If Len(x) > 2 Then x = Right(x, 2)
-    ReadByte = CByte(CInt("&h" & x))
-End Function
 
-Function OriginalByte(va)
-    Dim x
-    x = ipc.SendCmdRecvInt("orgbyte:" & va & ":" & Form1.hwnd)
-    If Len(x) > 2 Then x = Right(x, 2)
-    OriginalByte = CByte(CInt("&h" & x))
-End Function
 
 Function intToHex(x)
     On Error Resume Next
@@ -111,22 +92,6 @@ End Function
 Function Refresh()
     ipc.Send "refresh:"
 End Function
-
- Function NumFuncs() As Long
-    NumFuncs = ipc.SendCmdRecvInt("numfuncs:" & Form1.hwnd)
- End Function
-
- Function FunctionStart(functionIndex)
-    FunctionStart = ipc.SendCmdRecvInt("funcstart:" & functionIndex & ":" & Form1.hwnd)
- End Function
-
- Function FunctionEnd(functionIndex)
-    FunctionEnd = ipc.SendCmdRecvInt("funcend:" & functionIndex & ":" & Form1.hwnd)
- End Function
- 
- Function FunctionName(functionIndex)
-    FunctionName = ipc.SendCmdRecvInt("funcname:" & functionIndex & ":" & Form1.hwnd)
- End Function
 
 Function GetAsm(va)
     GetAsm = ipc.SendCmdRecvText("getasm:" & va & ":" & Form1.hwnd)
@@ -188,6 +153,10 @@ End Function
 Function GetName(offset)
     GetName = ipc.SendCmdRecvText("getname:" & offset & ":" & Form1.hwnd)
 End Function
+
+ Function FunctionName(functionIndex)
+    FunctionName = ipc.SendCmdRecvText("funcname:" & functionIndex & ":" & Form1.hwnd)
+ End Function
 
 Function ShowEA(offset)
     ipc.Send "show:" & offset
@@ -254,21 +223,65 @@ End Function
     ipc.Send "deldataxref:" & offset & ":" & tova
  End Sub
 
-Function FuncIndexFromVA(va)
-    FuncIndexFromVA = ipc.SendCmdRecvInt("funcindex:" & va & ":" & Form1.hwnd)
-End Function
+
 
 Function FuncVAByName(name)
-    FuncVAByName = ipc.SendCmdRecvInt("name_va:" & name & ":" & Form1.hwnd)
+    FuncVAByName = ipc.SendCmdRecvInt("name_va:" & name)
+End Function
+
+Function FuncIndexFromVA(va)
+    FuncIndexFromVA = ipc.SendCmdRecvInt("funcindex:" & va)
 End Function
 
 Function NextEA(va)
-    NextEA = ipc.SendCmdRecvInt("nextea:" & va & ":" & Form1.hwnd)
+    NextEA = ipc.SendCmdRecvInt("nextea:" & va)
 End Function
 
 Function PrevEA(va)
-    PrevEA = ipc.SendCmdRecvInt("prevea:" & va & ":" & Form1.hwnd)
+    PrevEA = ipc.SendCmdRecvInt("prevea:" & va)
 End Function
+
+ Function NumFuncs() As Long
+    NumFuncs = ipc.SendCmdRecvInt("numfuncs")
+ End Function
+
+ Function FunctionStart(functionIndex)
+    FunctionStart = ipc.SendCmdRecvInt("funcstart:" & functionIndex)
+ End Function
+
+ Function FunctionEnd(functionIndex)
+    FunctionEnd = ipc.SendCmdRecvInt("funcend:" & functionIndex)
+ End Function
+  
+ Function ReadByte(va)
+    ReadByte = CByte(ipc.SendCmdRecvInt("readbyte:" & va))
+End Function
+
+Function OriginalByte(va)
+    OriginalByte = CByte(ipc.SendCmdRecvInt("orgbyte:" & va))
+End Function
+
+Function ImageBase() As Long
+    ImageBase = ipc.SendCmdRecvInt("imgbase")
+End Function
+
+Function RenameFunc(oldname, newName) As Boolean
+    RenameFunc = IIf(ipc.SendCmdRecvInt("rename:" & oldname & ":" & newName) = 1, True, False)
+End Function
+
+
+'old style calls...
+    'FuncVAByName = ipc.SendCmdRecvInt("name_va:" & name & ":" & Form1.hwnd) 'old style with data callback..
+    'FuncIndexFromVA = ipc.SendCmdRecvInt("funcindex:" & va & ":" & Form1.hwnd) 'old style with data callback..
+    'NextEA = ipc.SendCmdRecvInt("nextea:" & va & ":" & Form1.hwnd) 'old style with data callback..
+    'PrevEA = ipc.SendCmdRecvInt("prevea:" & va & ":" & Form1.hwnd) 'old style with data callback..
+    'NumFuncs = ipc.SendCmdRecvInt("numfuncs:" & Form1.hwnd) 'old style with data callback..
+    'FunctionStart = ipc.SendCmdRecvInt("funcstart:" & functionIndex & ":" & Form1.hwnd) 'old style with data callback..
+    'FunctionEnd = ipc.SendCmdRecvInt("funcend:" & functionIndex & ":" & Form1.hwnd) 'old style with data callback..
+    'x = ipc.SendCmdRecvInt("readbyte:" & va & ":" & Form1.hwnd) 'old style with data callback..
+    'x = ipc.SendCmdRecvInt("orgbyte:" & va & ":" & Form1.hwnd) 'old style with data callback..
+    'x = ipc.SendCmdRecvInt("imgbase:" & Form1.hwnd) 'old style with data callback..
+
 
 
 ' Sub DelFunc(addr)

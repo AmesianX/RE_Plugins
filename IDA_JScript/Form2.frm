@@ -50,7 +50,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
  
 
-Public Function SelectIDAInstance() As Long
+Public Function SelectIDAInstance(Optional refresh As Boolean = True) As Long
     
     Dim x
     Dim cnt As Long
@@ -58,7 +58,11 @@ Public Function SelectIDAInstance() As Long
     
     On Error Resume Next
     
-    cnt = Form1.ida.ipc.FindActiveIDAWindows
+    If refresh Then
+        cnt = Form1.ida.ipc.FindActiveIDAWindows
+    Else
+        cnt = Form1.ida.ipc.Servers.Count
+    End If
     
     If cnt = 0 Then
         SelectIDAInstance = 0

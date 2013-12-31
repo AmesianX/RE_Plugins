@@ -60,7 +60,7 @@ Function Listen(hwnd As Long) As String
     IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage("IDA_SERVER")
     sc.AttachMessage subclassed_hwnd, IDASRVR_BROADCAST_MESSAGE
     
-    FindActiveIDAWindows
+    'FindActiveIDAWindows
     
 End Function
 
@@ -95,13 +95,21 @@ Function SendCmdRecvText(msg As String) As String
     SendCmdRecvText = DataIn
 End Function
  
+'this was the old way i was doing it, receiving the int as a data callback..
+'but more optimized way exists..using SendMessage return value (duh)
+'the plugin still supports the old method so I dont break any old code..
+'
+'Function SendCmdRecvInt(msg As String) As Long
+'    On Error Resume Next
+'    Send msg
+'    SendCmdRecvInt = CLng(DataIn)
+'End Function
+
 Function SendCmdRecvInt(msg As String) As Long
-    On Error Resume Next
-    Send msg
-    SendCmdRecvInt = CLng(DataIn)
+    SendCmdRecvInt = Send(msg)
 End Function
 
-Function Send(msg As String)
+Function Send(msg As String) As Long
     On Error Resume Next
     
     DataIn = Empty
@@ -119,7 +127,7 @@ Function Send(msg As String)
     CopyData.dwFlag = 3
     CopyData.cbSize = Len(msg) + 1
     CopyData.lpData = VarPtr(Buffer(1))
-    SendMessage RemoteHWND, WM_COPYDATA, RemoteHWND, CopyData
+    Send = SendMessage(RemoteHWND, WM_COPYDATA, RemoteHWND, CopyData)
     
 End Function
 

@@ -10,12 +10,12 @@ Begin VB.Form Form1
    ScaleWidth      =   10620
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton Command1 
-      Caption         =   "Active IDA Windows"
+      Caption         =   "Connect to Active IDA Windows"
       Height          =   315
-      Left            =   8100
+      Left            =   7500
       TabIndex        =   2
       Top             =   2340
-      Width           =   2355
+      Width           =   2955
    End
    Begin VB.ListBox List2 
       BeginProperty Font 
@@ -60,36 +60,60 @@ Attribute VB_Exposed = False
 'my spSubclass or VBaccelerator's subclass lib for stability when running in the IDE.
 'ps dont hit end from within IDE or it will crash as subclass isnt cleaned up.
 
-Dim ida As New CIDA
+Public ida As New CIDA
 
 Private Sub Command1_Click()
     
-    FindActiveIDAWindows
-    
-    'If Servers.Count = 0 Then
-    '    MsgBox "No server windows have registered themselves.."
-    '    Exit Sub
-    'End If
-    
-    ida.ShowServers
+    IDA_HWND = Form2.SelectIDAInstance
+    SampleAPI
     
 End Sub
 
 Private Sub Form_Load()
-    Dim va As Long
+
+    Dim windows As Long
+    Dim hwnd As Long
     
     Me.Visible = True
     
     Hook Me.hwnd
     List1.AddItem "Listening for messages on hwnd: " & Me.hwnd
 
-    'this is the original method which connects to the last IDA window opened.
-    'support is being added for multiple windows click on the find active windows button.
-    If Not ida.FindClient() Then
-        List1.AddItem "Could not find IDA Server hwnd."
+    'ida.FindClient() this will load the last open IDASrvr, below we show how to detect multiple windows and select one..
+    
+    windows = FindActiveIDAWindows()
+    Me.refresh
+    DoEvents
+    
+    If windows = 0 Then
+        List1.AddItem "No open IDA Windows detected."
         Exit Sub
+    ElseIf windows = 1 Then
+        IDA_HWND = Servers(1)
+    Else
+        hwnd = Form2.SelectIDAInstance(False)
+        If hwnd = 0 Then Exit Sub
+        IDA_HWND = hwnd
     End If
         
+    SampleAPI
+    
+    
+End Sub
+
+Sub SampleAPI()
+
+    Dim va As Long
+    Dim hwnd As Long
+    
+    List1.Clear
+    List2.Clear
+    
+    If IsWindow(IDA_HWND) = 0 Then
+        List1.AddItem "No Ida Windows detected"
+        Exit Sub
+    End If
+    
     List1.AddItem "Loaded idb: " & ida.LoadedFile()
     List1.AddItem "NumFuncs: " & ida.NumFuncs()
     
@@ -99,9 +123,10 @@ Private Sub Form_Load()
     List1.AddItem "Func[0].name: " & ida.FunctionName(0)
     List1.AddItem "1st inst: " & ida.GetAsm(va)
     
+    List1.AddItem "VA For Func 'start': " & Hex(ida.FuncAddrFromName("start"))
+    
     List1.AddItem "Jumping to 1st inst"
     ida.Jump va
-    
     
 End Sub
 

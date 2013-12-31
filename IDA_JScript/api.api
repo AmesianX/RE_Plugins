@@ -1,5 +1,5 @@
 alert(msg)
-imagebase (property get)
+imagebase()
 loadedfile (property get)
 Jump(va)
 message(msg)
@@ -43,4 +43,5 @@ PrevEA(va)
 PatchString(va, str, Optional isUnicode As Boolean = False)
 getClipboard()
 setClipboard(string)
+RenameFunc(oldname, newName)
 

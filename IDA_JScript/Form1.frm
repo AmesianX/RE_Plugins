@@ -309,13 +309,14 @@ Private Sub txtJS_AutoCompleteEvent(className As String)
     If className = "fso" Then
         txtJS.ShowAutoComplete "exec readfile writefile appendfile fileexists deletefile getClipboard setClipboard"
     ElseIf className = "ida" Then
-        'do i want to break these up into smaller chunkcs for intellisense?
-        txtJS.ShowAutoComplete "imagebase loadedfile jump patchbyte orginalbyte readbyte inttohex refresh() " & _
+        'do i want to break these up into smaller chunks for intellisense?
+        txtJS.ShowAutoComplete "imagebase loadedfile jump patchbyte originalbyte readbyte inttohex refresh() " & _
                                "numfuncs() functionstart functionend functionname getasm instsize xrefsto " & _
                                "xrefsfrom undefine getname " & _
                                "hideea showea hideblock showblock removename setname makecode " & _
                                "getcomment addcomment addcodexref adddataxref delcodexref deldataxref " & _
-                               "funcindexfromva funcvabyname nextea prevea patchstring makestr makeunk"
+                               "funcindexfromva funcvabyname nextea prevea patchstring makestr makeunk " & _
+                               "renamefunc"
     End If
         
     'divide up into these classes for intellise sense cleanliness?
