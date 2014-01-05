@@ -1,8 +1,9 @@
 
+alert(  h(ida.funcindexfromva(0x40132e)  ))
 
-va = ida.funcvabyname("start") 
+/*va = ida.funcvabyname("start") 
 alert(h(va))
-alert(  ida.RenameFunc("start","start1")  )
+alert(  ida.RenameFunc("start","start1")  )*/
 
 /*y='';
 va = 0x401830;
@@ -13,6 +14,13 @@ for(i=0;i<5;i++){
 }
 t(y)
 */
+
+
+
+
+
+
+
 
 
 

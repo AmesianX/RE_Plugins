@@ -12,9 +12,9 @@ Begin VB.Form Form1
    Begin VB.CommandButton Command1 
       Caption         =   "Connect to Active IDA Windows"
       Height          =   315
-      Left            =   7500
+      Left            =   7680
       TabIndex        =   2
-      Top             =   2340
+      Top             =   2400
       Width           =   2955
    End
    Begin VB.ListBox List2 
@@ -48,6 +48,23 @@ Begin VB.Form Form1
       TabIndex        =   0
       Top             =   30
       Width           =   10515
+   End
+   Begin VB.Label Label1 
+      Caption         =   "If only one window open it will auto connect, if multiple then you can select"
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   495
+      Left            =   120
+      TabIndex        =   3
+      Top             =   2280
+      Width           =   7455
    End
 End
 Attribute VB_Name = "Form1"
@@ -105,6 +122,9 @@ Sub SampleAPI()
 
     Dim va As Long
     Dim hwnd As Long
+    Dim a As Long
+    Dim b As Long
+    Dim r As Long
     
     List1.Clear
     List2.Clear
@@ -115,7 +135,19 @@ Sub SampleAPI()
     End If
     
     List1.AddItem "Loaded idb: " & ida.LoadedFile()
-    List1.AddItem "NumFuncs: " & ida.NumFuncs()
+    
+    a = BenchMark()
+    r = ida.NumFuncs()
+    b = BenchMark()
+    
+    List1.AddItem "NumFuncs: " & r & " (org " & b - a & " ticks)"
+    
+    a = BenchMark()
+    r = QuickCall(qcmNumFuncs)
+    b = BenchMark()
+    
+    List1.AddItem "NumFuncs: " & r & " (quickcall " & b - a & " ticks)"
+    
     
     va = ida.FunctionStart(0)
     List1.AddItem "Func[0].start: " & Hex(va)

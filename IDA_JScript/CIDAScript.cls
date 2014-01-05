@@ -16,6 +16,7 @@ Option Explicit
 Public ipc As CIpc
 Attribute ipc.VB_VarHelpID = -1
 
+
 Private Sub Class_Initialize()
     Set ipc = New CIpc
     ipc.FindClient "IDA_SERVER"
@@ -32,10 +33,6 @@ Function alert(msg)
     Else
         MsgBox msg
     End If
-End Function
-
-Function Jump(va As Long)
-    ipc.Send "jmp:" & va
 End Function
 
 Function Message(msg As String)
@@ -87,10 +84,6 @@ Function intToHex(x)
     intToHex = Hex(x)
     If Len(intToHex) = 1 Then intToHex = "0" & intToHex
     If Err.Number <> 0 Then intToHex = x 'hex can throw overflow bleh...
-End Function
-
-Function Refresh()
-    ipc.Send "refresh:"
 End Function
 
 Function GetAsm(va)
@@ -146,25 +139,16 @@ Function XRefsFrom(offset) 'returns CSV list
     XRefsFrom = tmp
 End Function
 
-Function Undefine(offset)
-    ipc.Send "undefine:" & offset
-End Function
 
 Function GetName(offset)
     GetName = ipc.SendCmdRecvText("getname:" & offset & ":" & Form1.hwnd)
+    If GetName = "NULL" Then GetName = ""
 End Function
 
  Function FunctionName(functionIndex)
     FunctionName = ipc.SendCmdRecvText("funcname:" & functionIndex & ":" & Form1.hwnd)
  End Function
 
-Function ShowEA(offset)
-    ipc.Send "show:" & offset
-End Function
-
-Function HideEA(offset)
-    ipc.Send "hide:" & offset
-End Function
 '
 Function HideBlock(offset, leng)
     Dim x, i As Long
@@ -172,7 +156,7 @@ Function HideBlock(offset, leng)
     For i = offset To x
         HideEA i
     Next
-    Refresh
+    refresh
 End Function
 
 Function ShowBlock(offset, leng)
@@ -181,21 +165,12 @@ Function ShowBlock(offset, leng)
     For i = offset To x
         ShowEA i
     Next
-    Refresh
+    refresh
 End Function
 
-
- Sub RemoveName(offset)
-    ipc.Send "remname:" & offset
- End Sub
-
- Sub Setname(offset, name)
+Sub Setname(offset, name)
     ipc.Send "setname:" & offset & ":" & CStr(name)
  End Sub
-
-Sub MakeCode(offset)
-    ipc.Send "makecode:" & offset
-End Sub
 
 Sub AddComment(offset, comment)
     ipc.Send "addcomment:" & offset & ":" & comment
@@ -219,55 +194,105 @@ End Function
     ipc.Send "delcodexref:" & offset & ":" & tova
  End Sub
  
-  Sub DelDataXRef(offset, tova)
+ Sub DelDataXRef(offset, tova)
     ipc.Send "deldataxref:" & offset & ":" & tova
  End Sub
-
-
-
+ 
 Function FuncVAByName(name)
     FuncVAByName = ipc.SendCmdRecvInt("name_va:" & name)
-End Function
-
-Function FuncIndexFromVA(va)
-    FuncIndexFromVA = ipc.SendCmdRecvInt("funcindex:" & va)
-End Function
-
-Function NextEA(va)
-    NextEA = ipc.SendCmdRecvInt("nextea:" & va)
-End Function
-
-Function PrevEA(va)
-    PrevEA = ipc.SendCmdRecvInt("prevea:" & va)
-End Function
-
- Function NumFuncs() As Long
-    NumFuncs = ipc.SendCmdRecvInt("numfuncs")
- End Function
-
- Function FunctionStart(functionIndex)
-    FunctionStart = ipc.SendCmdRecvInt("funcstart:" & functionIndex)
- End Function
-
- Function FunctionEnd(functionIndex)
-    FunctionEnd = ipc.SendCmdRecvInt("funcend:" & functionIndex)
- End Function
-  
- Function ReadByte(va)
-    ReadByte = CByte(ipc.SendCmdRecvInt("readbyte:" & va))
-End Function
-
-Function OriginalByte(va)
-    OriginalByte = CByte(ipc.SendCmdRecvInt("orgbyte:" & va))
-End Function
-
-Function ImageBase() As Long
-    ImageBase = ipc.SendCmdRecvInt("imgbase")
 End Function
 
 Function RenameFunc(oldname, newName) As Boolean
     RenameFunc = IIf(ipc.SendCmdRecvInt("rename:" & oldname & ":" & newName) = 1, True, False)
 End Function
+
+
+
+Function Jump(va As Long)
+    'ipc.Send "jmp:" & va
+    ipc.QuickCall qcmJmpAddr, va
+End Function
+
+Function JumpRVA(rva As Long)
+    ipc.QuickCall qcmJmpRVA, rva
+End Function
+
+Function refresh()
+    'ipc.Send "refresh:"
+    ipc.QuickCall qcmRefresh
+End Function
+
+Function Undefine(offset)
+    'ipc.Send "undefine:" & offset
+    ipc.QuickCall qcmUndef, CLng(offset)
+End Function
+
+Function ShowEA(offset)
+    'ipc.Send "show:" & offset
+    ipc.QuickCall qcmShow, CLng(offset)
+End Function
+
+Function HideEA(offset)
+    'ipc.Send "hide:" & offset
+    ipc.QuickCall qcmHide, CLng(offset)
+End Function
+
+ Sub RemoveName(offset)
+    'ipc.Send "remname:" & offset
+    ipc.QuickCall qcmRemName, CLng(offset)
+ End Sub
+
+ 
+Sub MakeCode(offset)
+    'ipc.Send "makecode:" & offset
+    ipc.QuickCall qcmMakeCode, CLng(offset)
+End Sub
+
+Function FuncIndexFromVA(va)
+    'FuncIndexFromVA = ipc.SendCmdRecvInt("funcindex:" & va)
+    FuncIndexFromVA = ipc.QuickCall(qcmFuncIdx, CLng(va))
+End Function
+
+Function NextEA(va)
+    'NextEA = ipc.SendCmdRecvInt("nextea:" & va)
+    NextEA = ipc.QuickCall(qcmNextEa, CLng(va))
+End Function
+
+Function PrevEA(va)
+    'PrevEA = ipc.SendCmdRecvInt("prevea:" & va)
+    PrevEA = ipc.QuickCall(qcmPrevEa, CLng(va))
+End Function
+
+ Function NumFuncs() As Long
+    'NumFuncs = ipc.SendCmdRecvInt("numfuncs")
+    NumFuncs = ipc.QuickCall(qcmNumFuncs)
+ End Function
+
+ Function FunctionStart(functionIndex)
+    'FunctionStart = ipc.SendCmdRecvInt("funcstart:" & functionIndex)
+    FunctionStart = ipc.QuickCall(qcmFuncStart, CLng(functionIndex))
+ End Function
+
+ Function FunctionEnd(functionIndex)
+'    FunctionEnd = ipc.SendCmdRecvInt("funcend:" & functionIndex)
+    FunctionEnd = ipc.QuickCall(qcmFuncEnd, CLng(functionIndex))
+ End Function
+  
+ Function ReadByte(va)
+'    ReadByte = CByte(ipc.SendCmdRecvInt("readbyte:" & va))
+    ReadByte = CByte(ipc.QuickCall(qcmReadByte, CLng(va)))
+End Function
+
+Function OriginalByte(va)
+    'OriginalByte = CByte(ipc.SendCmdRecvInt("orgbyte:" & va))
+    OriginalByte = CByte(ipc.QuickCall(qcmOrgByte, CLng(va)))
+End Function
+
+Function ImageBase() As Long
+    'ImageBase = ipc.SendCmdRecvInt("imgbase")
+    ImageBase = ipc.QuickCall(qcmImgBase)
+End Function
+
 
 
 'old style calls...

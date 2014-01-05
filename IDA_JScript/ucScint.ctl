@@ -246,7 +246,7 @@ Private Sub UserControl_Initialize()
         
         
         sciMain.InitScintilla UserControl.hwnd
-        sciMain.LoadAPIFile App.path & "\api.api"
+        sciMain.LoadAPIFile App.path & "\api.txt"
                
         hlMain.LoadHighlighters f
         hlMain.ReadSettings "PDFStreamDumper"

@@ -24,6 +24,30 @@ int  m_ServerHwnd = 0;
 char* IDA_SERVER_NAME = "IDA_SERVER";
 char m_msg[2020];
 bool received_response = false;
+UINT IDA_QUICKCALL_MESSAGE;
+int IDA_HWND=0;
+
+//quick call offers about 3x performance boost over original..
+enum quickCallMessages{
+	qcmJmpAddr = 1, // jmp:lngAdr
+	qcmJmpRVA = 7, // jmp_rva:lng_rva
+	qcmImgBase = 8, // imgbase 
+	qcmReadByte = 10, //readbyte,lngva 
+	qcmOrgByte = 11, //orgbyte,lngva 
+	qcmRefresh = 12, // refresh,
+	qcmNumFuncs = 13, // numfuncs 
+	qcmFuncStart = 14, //funcstart,funcIndex 
+	qcmFuncEnd = 15, //funcend,funcIndex 
+	qcmUndef = 20, //undefine,offset
+	qcmHide = 22, //hide,offset
+	qcmShow = 23, //show,offset
+	qcmRemName = 24, //remname,offset
+	qcmMakeCode = 25, //makecode,offset
+	qcmFuncIdx = 32, //funcindex,va 
+	qcmNextEa = 33, //nextea,va   
+	qcmPrevEa = 34 //prevea:va   
+};
+		
 
 #pragma warning (disable:4996)
 
@@ -112,7 +136,7 @@ char* ReceiveText(char* command, int hwnd){
 
 
 LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
-		
+
 		if( uMsg != WM_COPYDATA) return 0;
 		if( lParam == 0) return 0;
 		
@@ -128,6 +152,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
     return 0;
 }
 
+int QuickCall(quickCallMessages msg, int arg1 =0 ){
+	return SendMessage( (HWND)IDA_HWND, IDA_QUICKCALL_MESSAGE, msg, arg1);
+}
+
 int main(int argc, char* argv[])
 {
  
@@ -135,9 +163,11 @@ int main(int argc, char* argv[])
 
 	m_ServerHwnd = (int)CreateWindowA("EDIT","MESSAGE_WINDOW", 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	oldProc = (WNDPROC)SetWindowLongA((HWND)m_ServerHwnd, GWL_WNDPROC, (LONG)WindowProc);
-	
-	int IDA_HWND = (int)ReadReg(IDA_SERVER_NAME);
+
+	IDA_HWND = (int)ReadReg(IDA_SERVER_NAME);
 	if(!IsWindow((HWND)IDA_HWND)) IDA_HWND = 0;
+
+	IDA_QUICKCALL_MESSAGE = RegisterWindowMessageA("IDA_QUICKCALL");
 
 	if( m_ServerHwnd == 0){
 		printf("Could not create listener window to receive data on exiting...\n");
@@ -154,26 +184,43 @@ int main(int argc, char* argv[])
 	}
 	
 	printf("Listening for responses on hwnd: %d\n", m_ServerHwnd); 
-	printf("Active IDA hwnd: %d\n\n", IDA_HWND);
+	printf("Active IDA hwnd: %d\n", IDA_HWND);
 
 	char buf[255];
 	int ret = 0;
     char* sret = 0;
+	LARGE_INTEGER start , end, freq;
+	
+	QueryPerformanceFrequency(&freq);
+	printf("1 tick = 1/%d seconds\n\n", freq.QuadPart);
 
 	sprintf(buf,"loadedfile:%d", m_ServerHwnd);
 	sret = ReceiveText(buf,IDA_HWND); 	
     printf("Loaded IDB: %s\n", sret);
 
 	sprintf(buf,"numfuncs:%d", m_ServerHwnd);
-	ret = ReceiveInt(buf, IDA_HWND);
-	printf("Function Count: %d\n", ret);
+	
+	QueryPerformanceCounter(&start);
+	ret = ReceiveInt(buf, IDA_HWND); //two copydata's  + sprintf + string to int
+	QueryPerformanceCounter(&end);
+	
+	printf("Function Count: %d  (org method %d ticks)\n", ret, end.QuadPart-start.QuadPart);
 
+	QueryPerformanceCounter(&start);
 	ret = NewReceiveInt("numfuncs", IDA_HWND);
-	printf("Function Count: %d  (new method)\n", ret);
+	QueryPerformanceCounter(&end);
+	
+	printf("Function Count: %d  (new method %d ticks)\n", ret, end.QuadPart-start.QuadPart);
 
+	QueryPerformanceCounter(&start);
+	ret = QuickCall(qcmNumFuncs);
+	QueryPerformanceCounter(&end);
+	
+	printf("Function Count: %d  (quick call %d ticks)\n", ret, end.QuadPart-start.QuadPart);
+	
 	sprintf(buf,"funcstart:1:%d", m_ServerHwnd);
 	int funcStart = ReceiveInt(buf, IDA_HWND);
-	printf("First Func Start: 0x%x\n", funcStart);
+	printf("\nFirst Func Start: 0x%x\n", funcStart);
 
 	sprintf(buf,"funcend:1:%d", m_ServerHwnd);
 	ret = ReceiveInt(buf, IDA_HWND);

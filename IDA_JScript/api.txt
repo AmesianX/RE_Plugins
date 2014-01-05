@@ -44,4 +44,4 @@ PatchString(va, str, Optional isUnicode As Boolean = False)
 getClipboard()
 setClipboard(string)
 RenameFunc(oldname, newName)
-
+JumpRVA(rva)

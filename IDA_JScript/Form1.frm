@@ -140,6 +140,7 @@ Private Sub Command1_Click()
     
     If Not ida.isUp Then
         Text1 = "IDA Server not found"
+        lblIDB.Caption = "Current IDB: (null)"
         Exit Sub
     End If
     
@@ -312,7 +313,7 @@ Private Sub txtJS_AutoCompleteEvent(className As String)
         'do i want to break these up into smaller chunks for intellisense?
         txtJS.ShowAutoComplete "imagebase loadedfile jump patchbyte originalbyte readbyte inttohex refresh() " & _
                                "numfuncs() functionstart functionend functionname getasm instsize xrefsto " & _
-                               "xrefsfrom undefine getname " & _
+                               "xrefsfrom undefine getname jumprva " & _
                                "hideea showea hideblock showblock removename setname makecode " & _
                                "getcomment addcomment addcodexref adddataxref delcodexref deldataxref " & _
                                "funcindexfromva funcvabyname nextea prevea patchstring makestr makeunk " & _

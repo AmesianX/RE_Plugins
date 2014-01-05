@@ -15,7 +15,7 @@ install requirements:
 if pdfstreamdumper is installed you can skip this section
 except that
 
-swfdump requires the java runtime installed.
+--> swfdump requires the java runtime installed.
 
 hexed.ocx - drag and drop on reg_ocx.bat to register 
 

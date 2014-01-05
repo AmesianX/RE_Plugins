@@ -17,6 +17,8 @@ Private WithEvents sc As clsSubClass
 Attribute sc.VB_VarHelpID = -1
 
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function SendMessageByVal Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Any) As Long
+
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
 Private Declare Function RegisterWindowMessage Lib "user32" Alias "RegisterWindowMessageA" (ByVal lpString As String) As Long
 Private Declare Function SendMessageTimeout Lib "user32" Alias "SendMessageTimeoutA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal fuFlags As Long, ByVal uTimeout As Long, lpdwResult As Long) As Long
@@ -27,9 +29,31 @@ Private Type COPYDATASTRUCT
     lpData As Long
 End Type
 
+'quick call offers about 3x performance boost over original..
+Public Enum quickCallMessages
+    qcmJmpAddr = 1    ' jmp:lngAdr
+    qcmJmpRVA = 7     ' jmp_rva:lng_rva
+    qcmImgBase = 8    ' imgbase
+    qcmReadByte = 10  ' readbyte:lngva
+    qcmOrgByte = 11   ' orgbyte:lngva
+    qcmRefresh = 12   ' refresh
+    qcmNumFuncs = 13  ' numfuncs
+    qcmFuncStart = 14 ' funcstart:funcIndex
+    qcmFuncEnd = 15   ' funcend:funcIndex
+    qcmUndef = 20     ' undefine:offset
+    qcmHide = 22      ' hide:offset
+    qcmShow = 23      ' show:offset
+    qcmRemName = 24   ' remname:offset
+    qcmMakeCode = 25  ' makecode:offset
+    qcmFuncIdx = 32   ' funcindex:va
+    qcmNextEa = 33    ' nextea:va
+    qcmPrevEa = 34    ' prevea:va
+End Enum
+
 Private Const WM_COPYDATA = &H4A
 Private Const HWND_BROADCAST = &HFFFF&
 Private IDASRVR_BROADCAST_MESSAGE As Long
+Private IDA_QUICKCALL_MESSAGE As Long
 
 Public Servers As New Collection
 Public RemoteHWND As Long
@@ -38,8 +62,6 @@ Public ServerName As String
          
 Public timeout As Long
 Private DataIn As String
-Private WaitForDone As Boolean 'receives up to DONE message or timeout
-Public TimedOut As Boolean 'consumer is responsible for setting this to false when they see fit to retest
 
 Private isListening As Boolean
 
@@ -58,6 +80,7 @@ Function Listen(hwnd As Long) As String
         
     isListening = True
     IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage("IDA_SERVER")
+    IDA_QUICKCALL_MESSAGE = RegisterWindowMessage("IDA_QUICKCALL")
     sc.AttachMessage subclassed_hwnd, IDASRVR_BROADCAST_MESSAGE
     
     'FindActiveIDAWindows
@@ -109,6 +132,17 @@ Function SendCmdRecvInt(msg As String) As Long
     SendCmdRecvInt = Send(msg)
 End Function
 
+Function QuickCall(msg As quickCallMessages, Optional arg1 As Long = 0) As Long
+    
+    If IsWindow(RemoteHWND) = 0 Then
+        Form1.List1.AddItem "SendData Invalid hwnd: " & RemoteHWND
+        Form1.lblIDB.Caption = "Current DB (Null)"
+        Exit Function
+    End If
+    
+    QuickCall = SendMessageByVal(RemoteHWND, IDA_QUICKCALL_MESSAGE, msg, arg1)
+End Function
+
 Function Send(msg As String) As Long
     On Error Resume Next
     
@@ -118,6 +152,7 @@ Function Send(msg As String) As Long
     
     If IsWindow(RemoteHWND) = 0 Then
         Form1.List1.AddItem "SendData Invalid hwnd: " & RemoteHWND
+        Form1.lblIDB.Caption = "Current DB (Null)"
         Exit Function
     End If
     

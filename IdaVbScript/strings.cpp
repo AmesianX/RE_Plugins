@@ -21,6 +21,8 @@
 #include <search.hpp>
 #include <xref.hpp>
 
+#undef strcpy
+ 
 IDispatch        *IDisp;
 
 int StartPlugin(void);
@@ -306,9 +308,22 @@ int __stdcall PrevAddr(int offset){
 void __stdcall AnalyzeArea(int startat, int endat){ /*analyse_area(startat, endat);*/}
 
 
-//not workign to get labels
+//now working w/ labels
 void __stdcall GetName(int offset, char* buf, int bufsize){
+
 	get_true_name( BADADDR, offset, buf, bufsize );
+
+	if(strlen(buf) == 0){
+		func_t* f = get_func(offset);
+		for(int i=0; i < f->llabelqty; i++){
+			if( f->llabels[i].ea == offset ){
+				int sz = strlen(f->llabels[i].name);
+				if(sz < bufsize) strcpy(buf,f->llabels[i].name);
+				return;
+			}
+		}
+	}
+
 }
 
 //not workign to make code and analyze

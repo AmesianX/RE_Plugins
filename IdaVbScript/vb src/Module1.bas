@@ -277,6 +277,12 @@ Function GetAsmRange(start As Long, leng As Long, Optional asmOnly As Integer = 
         
         tmp = GetAsmCode(start + i)
         If Len(tmp) > 0 Then
+            
+            If i <> 0 Then 'add in local labels...bug not the function name (offset 0)
+                n = GetName(start + i)
+                If Len(n) > 0 Then x = x & vbCrLf & IIf(asmOnly = 0, vbTab, "") & n & ":" & vbCrLf
+            End If
+                 
             If asmOnly > 0 Then
                  x = x & tmp & vbCrLf
             Else
@@ -312,9 +318,13 @@ Function GetName(offset) As String
     aGetName CLng(offset), buf, 257
     
     x = InStr(buf, Chr(0))
-    If x > 1 Then buf = Mid(buf, 1, x)
+    If x = 1 Then
+        buf = ""
+    ElseIf x > 2 Then
+        buf = Mid(buf, 1, x - 1)
+    End If
     
-    GetName = x
+    GetName = buf
 
 End Function
 

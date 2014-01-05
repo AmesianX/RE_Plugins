@@ -1,6 +1,6 @@
 CPlugin = 44, 44, 648, 476, C
 frmPluginSample = 72, 19, 805, 600, , 17, 3, 903, 624, C
-Module1 = 39, 23, 863, 587, Z
+Module1 = 39, 23, 863, 587, 
 frmStringsOnStack = 132, 132, 704, 564, C, 88, 88, 592, 520, C
 frmDumpFix = 110, 110, 585, 542, , 143, 67, 618, 499, C
 CIDAScript = 24, 20, 604, 597, 

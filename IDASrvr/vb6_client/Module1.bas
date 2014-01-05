@@ -5,6 +5,11 @@ Private Type COPYDATASTRUCT
     lpData As Long
 End Type
 
+Public Type LARGE_INTEGER
+    lowpart As Long
+    highpart As Long
+End Type
+
  Public Const GWL_WNDPROC = (-4)
  Public Const WM_COPYDATA = &H4A
  Global lpPrevWndProc As Long
@@ -16,18 +21,50 @@ End Type
  Private Declare Function CallWindowProc Lib "user32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
  Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
  Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+ Private Declare Function SendMessageByVal Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Any) As Long
  Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
  Private Declare Function RegisterWindowMessage Lib "user32" Alias "RegisterWindowMessageA" (ByVal lpString As String) As Long
  Private Declare Function SendMessageTimeout Lib "user32" Alias "SendMessageTimeoutA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal fuFlags As Long, ByVal uTimeout As Long, lpdwResult As Long) As Long
+ Public Declare Function QueryPerformanceCounter Lib "kernel32" (lpPerformanceCount As LARGE_INTEGER) As Long
+
  Private Const HWND_BROADCAST = &HFFFF&
 
+ Private IDA_QUICKCALL_MESSAGE As Long
  Private IDASRVR_BROADCAST_MESSAGE As Long
  Public Servers As New Collection
  
+ 'quick call offers about 3x performance boost over original..
+Public Enum quickCallMessages
+    qcmJmpAddr = 1    ' jmp:lngAdr
+    qcmJmpRVA = 7     ' jmp_rva:lng_rva
+    qcmImgBase = 8    ' imgbase
+    qcmReadByte = 10  ' readbyte:lngva
+    qcmOrgByte = 11   ' orgbyte:lngva
+    qcmRefresh = 12   ' refresh
+    qcmNumFuncs = 13  ' numfuncs
+    qcmFuncStart = 14 ' funcstart:funcIndex
+    qcmFuncEnd = 15   ' funcend:funcIndex
+    qcmUndef = 20     ' undefine:offset
+    qcmHide = 22      ' hide:offset
+    qcmShow = 23      ' show:offset
+    qcmRemName = 24   ' remname:offset
+    qcmMakeCode = 25  ' makecode:offset
+    qcmFuncIdx = 32   ' funcindex:va
+    qcmNextEa = 33    ' nextea:va
+    qcmPrevEa = 34    ' prevea:va
+End Enum
+
+Function BenchMark() As Long
+    Dim i As LARGE_INTEGER
+    QueryPerformanceCounter i
+    BenchMark = i.lowpart
+End Function
+
  Public Sub Hook(hwnd As Long)
      subclassed_hwnd = hwnd
      lpPrevWndProc = SetWindowLong(subclassed_hwnd, GWL_WNDPROC, AddressOf WindowProc)
      IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage("IDA_SERVER")
+     IDA_QUICKCALL_MESSAGE = RegisterWindowMessage("IDA_QUICKCALL")
  End Sub
 
  Function FindActiveIDAWindows() As Long
@@ -146,3 +183,6 @@ Function SendCmdRecvLong(cmd As String, Optional ByVal hwnd As Long) As Long
     SendCmdRecvLong = SendCMD(cmd, hwnd)
 End Function
 
+Function QuickCall(msg As quickCallMessages, Optional arg1 As Long = 0) As Long
+    QuickCall = SendMessageByVal(IDA_HWND, IDA_QUICKCALL_MESSAGE, msg, arg1)
+End Function

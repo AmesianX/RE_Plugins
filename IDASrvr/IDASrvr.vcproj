@@ -270,6 +270,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\idasdk55\idasdk55\include\frame.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\idasdk55\idasdk55\include\funcs.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\idasdk55\idasdk55\include\ida.hpp"
 				>
 			</File>

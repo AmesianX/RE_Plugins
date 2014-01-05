@@ -28,6 +28,8 @@ todo: add error handling around HandleMsg
 #include <xref.hpp>
 
 #undef sprintf
+#undef strcpy
+
 #pragma warning(disable:4996)
 
 #include "IDASrvr.h"
@@ -49,6 +51,7 @@ char m_msg[2020];
 cpyData CopyData;
 CRITICAL_SECTION m_cs;
 UINT IDASRVR_BROADCAST_MESSAGE=0;
+UINT IDA_QUICKCALL_MESSAGE = 0;
 
 int __stdcall ImageBase(void);
 
@@ -147,48 +150,124 @@ bool SendIntMessage(int hwnd, int resp){
 	return SendTextMessage(hwnd,tmp, strlen(tmp));
 }
 
+int HandleQuickCall(int fIndex, int arg1){
+
+	//msg("QuickCall( %d, 0x%x)\n" , fIndex, arg1);
+
+	switch(fIndex){
+		case 1: // jmp:lngAdr
+				jumpto( arg1 );
+				return 0;
+
+		case 7: // jmp_rva:lng_rva
+				jumpto( ImageBase()+arg1 );
+				return 0;
+
+		case 8: // imgbase 
+				return ImageBase();
+				 
+		case 10: //readbyte:lngva 
+				return get_byte(arg1);
+				 
+		case 11: //orgbyte:lngva 
+				return get_original_byte(arg1);		 
+
+		case 12: // refresh:
+				Refresh();
+				return 0;
+
+		case 13: // numfuncs 
+				return NumFuncs();		 
+
+		case 14: //funcstart:funcIndex 
+				 return FunctionStart( arg1 );
+				 
+		case 15: //funcend:funcIndex 
+				 return FunctionEnd( arg1 );
+				 
+		case 20: //undefine:offset
+				Undefine( arg1 );
+				return 0;
+
+		case 22: //hide:offset
+				HideEA( arg1 );
+				return 0;
+
+		case 23: //show:offset
+				ShowEA( arg1 );
+				return 0;
+
+		case 24: //remname:offset
+				RemvName( arg1 );
+				return 0;
+
+		case 25: //makecode:offset
+			    MakeCode( arg1 );
+			    return 0;
+
+		case 32: //funcindex:va 
+				 return get_func_num( arg1 );
+					
+		case 33: //nextea:va  should this return null if it crosses function boundaries? yes probably...
+				 return find_code( arg1 , SEARCH_DOWN | SEARCH_NEXT );
+					
+		case 34: //prevea:va  should this return null if it crosses function boundaries? yes probably...
+				 return find_code( arg1 , SEARCH_UP | SEARCH_NEXT );
+					
+
+	}
+
+	return -1; //not implemented
+
+}
+
 int HandleMsg(char* m){
 	/*  for responses we whould pass in hwnd and not bother with having to do lookup...
 		note all offsets/hwnds/indexes transfered as decimal
 		11 of these now have the callback hwnd optional [:hwnd] because I realized I can just use the 
 			SendMessage return value to return a int instead of an integer string data callback (duh!)
 			the old style is still supported so I dont break any code.
+
+			those marked with q are eligable for quickcall handling
+				full  call ~ 20399 ticks    1
+				new   call ~ 15993         4/5
+				quick call ~  7322         1/3
 			
 		0 msg:message
-		1 jmp:lngAdr
+	q	1 jmp:lngAdr
 		2 jmp_name:function_name
 		3 name_va:fx_name[:hwnd]          (returns va for fxname)
 	    4 rename:oldname:newname[:hwnd]   (w/confirm: sends back 1 for success or 0 for fail)
 	    5 loadedfile:hwnd
 	    6 getasm:lngva:hwnd
-	    7 jmp_rva:lng_rva
-	  	8 imgbase[:hwnd]
+	q   7 jmp_rva:lng_rva
+	q  	8 imgbase[:hwnd]
 		9 patchbyte:lng_va:byte_newval
-	   10 readbyte:lngva[:hwnd]
-	   11 orgbyte:lngva[:hwnd]
-	   12 refresh:
-	   13 numfuncs[:hwnd]
-	   14 funcstart:funcIndex[:hwnd]
-	   15 funcend:funcIndex[:hwnd]
+	q  10 readbyte:lngva[:hwnd]
+	q  11 orgbyte:lngva[:hwnd]
+	q  12 refresh:
+	q  13 numfuncs[:hwnd]
+	q  14 funcstart:funcIndex[:hwnd]
+	q  15 funcend:funcIndex[:hwnd]
 	   16 funcname:funcIndex:hwnd
 	   17 setname:va:name
-	   18 refsto:offset:hwnd          //multiple call backs to hwnd each int as string, still synchronous
-	   19 refsfrom:offset:hwnd        //multiple call backs to hwnd each int as string, still synchronous
-	   20 undefine:offset
+	q  18 refsto:offset:hwnd          //multiple call backs to hwnd each int as string, still synchronous
+	q  19 refsfrom:offset:hwnd        //multiple call backs to hwnd each int as string, still synchronous
+	q  20 undefine:offset
 	   21 getname:offset:hwnd
-	   22 hide:offset
-	   23 show:offset
-	   24 remname:offset
-       25 makecode:offset
+	q  22 hide:offset
+	q  23 show:offset
+	q  24 remname:offset
+    q  25 makecode:offset
 	   26 addcomment:offset:comment (non repeatable)
 	   27 getcomment:offset:hwnd    (non repeatable)
 	   28 addcodexref:offset:tova
 	   29 adddataxref:offset:tova
 	   30 delcodexref:offset:tova
 	   31 deldataxref:offset:tova
-	   32 funcindex:va[:hwnd]
-	   33 nextea:va[:hwnd]
-	   34 prevea:va[:hwnd]
+	q  32 funcindex:va[:hwnd]
+	q  33 nextea:va[:hwnd]
+	q  34 prevea:va[:hwnd]
 	   35 makestring:va:[ascii | unicode]
 	   36 makeunk:va:size
     */
@@ -424,8 +503,14 @@ int HandleMsg(char* m){
 
 
 
-LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam){
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		
+		
+		if( uMsg == IDA_QUICKCALL_MESSAGE )//uMsg apparently has to be a registered message to be received...
+		{
+			return HandleQuickCall( (int)wParam, (int)lParam );
+		}
+	
 		if( uMsg == IDASRVR_BROADCAST_MESSAGE){ //so clients can sent a broadcast to all windows with wparam of their command hwnd
 			if( IsWindow((HWND)wParam) ){       //we ping them back with with lParam = ServerHwnd to say were alive 
 				SendMessage((HWND)wParam, IDASRVR_BROADCAST_MESSAGE, 0, (LPARAM)ServerHwnd);
@@ -481,6 +566,7 @@ int idaapi init(void)
   oldProc = (WNDPROC)SetWindowLong(ServerHwnd, GWL_WNDPROC, (LONG)WindowProc);
   SetReg(IPC_NAME, (int)ServerHwnd);
   IDASRVR_BROADCAST_MESSAGE = RegisterWindowMessage(IPC_NAME);
+  IDA_QUICKCALL_MESSAGE = RegisterWindowMessage("IDA_QUICKCALL");
   InitializeCriticalSection(&m_cs);
   return PLUGIN_KEEP;
 }
@@ -599,9 +685,22 @@ int __stdcall PrevAddr(int offset){
 void __stdcall AnalyzeArea(int startat, int endat){ /*analyse_area(startat, endat);*/}
 
 
-//not workign to get labels
+//now works to get local labels
 void __stdcall GetName(int offset, char* buf, int bufsize){
+
 	get_true_name( BADADDR, offset, buf, bufsize );
+
+	if(strlen(buf) == 0){
+		func_t* f = get_func(offset);
+		for(int i=0; i < f->llabelqty; i++){
+			if( f->llabels[i].ea == offset ){
+				int sz = strlen(f->llabels[i].name);
+				if(sz < bufsize) strcpy(buf,f->llabels[i].name);
+				return;
+			}
+		}
+	}
+
 }
 
 //not workign to make code and analyze
