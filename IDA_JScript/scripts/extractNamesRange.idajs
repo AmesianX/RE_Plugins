@@ -1,0 +1,23 @@
+
+//creates an IDC script of all of the user defined names in an IDB and saves them to the clipboard.
+
+cnt = ida.numfuncs();
+ret = '';
+
+for(i=0;i<cnt;i++){
+    start = ida.functionstart(i);
+    n = ida.functionname(i); 
+    //MakeName(0X00405014,"CreateRemoteThread_");
+    if(n.substring(0,4) != "sub_"){
+        ret += "MakeName(0X" + h(start) + ",\"" + n + "\");\r\n"
+    }
+} 
+
+t(ret)
+fso.setclipboard(ret);
+alert("User defined names IDC saved to clipboard");
+
+
+
+
+

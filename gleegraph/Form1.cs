@@ -32,6 +32,8 @@ namespace gleeGraph
             gViewer.ZoomFraction = .02; //zoom increment smaller for smooth scrolling..
             mnuPopup.MouseLeave += new EventHandler(mnuPopup_MouseLeave);
             graph = new CGraph(gViewer, lvNodes, this);
+            lst.Width = lvNodes.Width;
+            lvNodes.Columns[0].Width = lvNodes.Width - 20;
         }
 
         protected override void WndProc(ref Message m)
@@ -251,6 +253,8 @@ namespace gleeGraph
             {
                 gViewer.Width = this.Width - gViewer.Left - 20;
                 gViewer.Height = this.Height - gViewer.Top - 40;
+                lst.Top = this.Height - lst.Height - 30;
+                lvNodes.Height = lst.Top - 30;
             }
             catch (Exception ex) { }
         }
@@ -313,7 +317,7 @@ namespace gleeGraph
         private void removeNodesBelowToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (selNode == null) return;
-            List<Node> nodes = graph.NodesBelow(selNode);
+            List<Node> nodes = graph.NodesBelow(selNode,null);
             foreach (Node n in nodes)
             {
                 n.Attr.AddStyle(Style.Invis); //doesnt look like there is any way to hide nodes..
@@ -328,7 +332,7 @@ namespace gleeGraph
             string prefix = Program.InputBox("Enter prefix to use");
             if (prefix.Length == 0) return;
             
-            List<Node> nodes = graph.NodesBelow(selNode);
+            List<Node> nodes = graph.NodesBelow(selNode, "sub_");
 
             if (MessageBox.Show("I am about to prefix " + nodes.Count + " nodes?", "Prefix Warning", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
                 return;
@@ -382,6 +386,13 @@ namespace gleeGraph
             }
 
             Process.Start(orgExe, lastGraph);
+
+        }
+
+        private void setTopMostToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            setTopMostToolStripMenuItem.Checked = !setTopMostToolStripMenuItem.Checked;
+            Program.SetTopMost(this.Handle, setTopMostToolStripMenuItem.Checked);
 
         }
 

@@ -213,6 +213,9 @@ int HandleQuickCall(int fIndex, int arg1){
 					
 		case 34: //prevea:va  should this return null if it crosses function boundaries? yes probably...
 				 return find_code( arg1 , SEARCH_UP | SEARCH_NEXT );
+
+	    case 37: //screenea:
+				 return ScreenEA();
 					
 
 	}
@@ -270,6 +273,7 @@ int HandleMsg(char* m){
 	q  34 prevea:va[:hwnd]
 	   35 makestring:va:[ascii | unicode]
 	   36 makeunk:va:size
+	   37 screenea:
     */
 
 	const int MAX_ARGS = 6;
@@ -289,8 +293,8 @@ int HandleMsg(char* m){
 					"setname","refsto","refsfrom","undefine","getname","hide","show","remname","makecode",
     /*               26            27           28             29           30             31              */
 	                "addcomment","getcomment","addcodexref","adddataxref","delcodexref","deldataxref",
-	/*               32          33         34        35           36      */
-					"funcindex","nextea","prevea","makestring","makeunk",
+	/*               32          33         34        35           36        37       */
+					"funcindex","nextea","prevea","makestring","makeunk", "screenea",
 					"\x00"};
 	int i=0;
 	int argc=0;
@@ -314,7 +318,7 @@ int HandleMsg(char* m){
 		if(strcmp(cmds[i],args[0])==0 ) break;
 	}
 
-	if(m_debug) msg("command handler: %d",i);
+	//if(m_debug) msg("command handler: %d",i);
 
 	//handle specific command
 	switch(i){
@@ -497,6 +501,9 @@ int HandleMsg(char* m){
 					do_unknown_range( atoi(args[1]), atoi(args[2]), DOUNK_SIMPLE);
 					break;
 
+		  case 37: //screenea:
+					return ScreenEA();
+
 	}				
 
 };
@@ -508,7 +515,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		
 		if( uMsg == IDA_QUICKCALL_MESSAGE )//uMsg apparently has to be a registered message to be received...
 		{
-			return HandleQuickCall( (int)wParam, (int)lParam );
+			try{
+				return HandleQuickCall( (int)wParam, (int)lParam );
+			}catch(...){ 
+				msg("Error in HandleQuickCall(%d, %x)\n", (int)wParam, (int)lParam );
+				return -1;
+			}
 		}
 	
 		if( uMsg == IDASRVR_BROADCAST_MESSAGE){ //so clients can sent a broadcast to all windows with wparam of their command hwnd
@@ -559,7 +571,7 @@ void DoEvents()
 } 
 */
 
-int idaapi init(void)
+int idaapi init(void) 
 {
   //immediatly create server window for use (no need to explicitly launch plugin)  
   ServerHwnd = CreateWindow("EDIT","MESSAGE_WINDOW", 0, 0, 0, 0, 0, 0, 0, 0, 0);

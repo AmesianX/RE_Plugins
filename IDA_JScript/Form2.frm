@@ -88,7 +88,7 @@ Public Function SelectIDAInstance(Optional refresh As Boolean = True) As Long
         List1.ListIndex = 0
     End If
     
-    Me.Show 1, Form1
+    Me.Show 1, Form1 'modal - execution hangs here until this form is hidden
     
     Dim sel
     sel = List1.List(List1.ListIndex)
@@ -112,3 +112,6 @@ Private Sub cmdSelect_Click()
     Me.Hide
 End Sub
 
+Private Sub List1_DblClick()
+    If List1.ListIndex >= 0 Then Me.Hide
+End Sub

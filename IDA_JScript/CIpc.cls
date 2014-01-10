@@ -48,6 +48,7 @@ Public Enum quickCallMessages
     qcmFuncIdx = 32   ' funcindex:va
     qcmNextEa = 33    ' nextea:va
     qcmPrevEa = 34    ' prevea:va
+    qcmScreenEA = 37  ' screenea:
 End Enum
 
 Private Const WM_COPYDATA = &H4A

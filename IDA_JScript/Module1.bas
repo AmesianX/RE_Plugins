@@ -1,4 +1,10 @@
 Attribute VB_Name = "Module1"
+ Public Type LARGE_INTEGER
+    lowpart As Long
+    highpart As Long
+End Type
+
+Public Declare Function QueryPerformanceCounter Lib "kernel32" (lpPerformanceCount As LARGE_INTEGER) As Long
 Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
 Global dlg As New clsCmnDlg
 Global fso As New CFileSystem2

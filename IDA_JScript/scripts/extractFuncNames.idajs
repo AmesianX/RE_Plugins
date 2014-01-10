@@ -1,0 +1,45 @@
+
+//creates an IDC script of all of the user defined names in an IDB and saves them to the clipboard.
+
+//s = fso.askvalue("Start offset","0x")
+//e = fso.askvalue("End offset","0x")
+
+s = 0x09A47A8
+e = 0x09A5ACE
+
+if(s.length==0 || e.length == 0){
+    throw 21
+}
+
+s = parseInt(s);
+e = parseInt(e);
+
+ret = '';
+com = 'comments:\r\n';
+
+while(s < e)
+{
+    n = ida.getname(s)
+    c = ida.getcomment(s);
+    
+    if(n && n.length > 0){
+        ret += "MakeName(0X" + h(s) + ",\"" + n + "\");\r\n"
+    }
+    
+    if(c && c.length > 0){
+        com += "0X" + h(s) + "\t= " + c + "\r\n";
+    }
+    
+    s ida.nextea(s);
+    if(s==-1) break;
+} 
+
+ret = ret + "\r\n\r\n" + com 
+t(ret)
+fso.setclipboard(ret);
+alert("Names and comments for range extracted");
+
+
+
+
+

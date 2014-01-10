@@ -29,9 +29,9 @@ End Property
 
 Function alert(msg)
     If IsArray(msg) Then
-        MsgBox "Array: " & vbCrLf & vbCrLf & Join(msg, vbCrLf)
+        MsgBox "Array: " & vbCrLf & vbCrLf & Join(msg, vbCrLf), vbInformation, "IDAJScript"
     Else
-        MsgBox msg
+        MsgBox msg, vbInformation, "IDAJScript"
     End If
 End Function
 
@@ -293,7 +293,9 @@ Function ImageBase() As Long
     ImageBase = ipc.QuickCall(qcmImgBase)
 End Function
 
-
+Function ScreenEA() As Long
+    ScreenEA = ipc.QuickCall(qcmScreenEA)
+End Function
 
 'old style calls...
     'FuncVAByName = ipc.SendCmdRecvInt("name_va:" & name & ":" & Form1.hwnd) 'old style with data callback..
@@ -353,6 +355,9 @@ End Function
 'End Sub
 '
 
+Function AskValue(Optional prompt, Optional defVal) As String
+    AskValue = InputBox(prompt, , defVal)
+End Function
 
 Sub Exec(cmd)
    On Error Resume Next
@@ -414,6 +419,20 @@ End Function
 Function setClipboard(x)
     Clipboard.Clear
     Clipboard.SetText x
+End Function
+
+Function OpenFileDialog() As String
+    OpenFileDialog = dlg.OpenDialog(AllFiles)
+End Function
+
+Function SaveFileDialog() As String
+    SaveFileDialog = dlg.SaveDialog(AllFiles)
+End Function
+
+Function BenchMark() As Long
+    Dim i As LARGE_INTEGER
+    QueryPerformanceCounter i
+    BenchMark = i.lowpart
 End Function
 
 'Function refListToArray(x) As Long() 'no way to use a vb6 array in js?

@@ -29,25 +29,36 @@ namespace gleeGraph
         }
 
         //no checking for circular references but no dups at least.
-        public List<Node> NodesBelow(Node parent)
+        public List<Node> NodesBelow(Node parent, string opt_nodeMatchText)
         {
             List<Node> nodes = new List<Node>();
             try
             {
-                AddSubNodes(ref nodes, parent);
+                AddSubNodes(ref nodes, parent, opt_nodeMatchText);
             }
             catch (Exception e) { /*I will deal with you latter*/ };
             return nodes;
         }
 
         //can trigger an out of stack space error on large graphs.. 
-        private void AddSubNodes(ref List<Node> nodes, Node parent){
+        private void AddSubNodes(ref List<Node> nodes, Node parent, string opt_nodeMatchText)
+        {
             foreach(Edge e in parent.OutEdges)
             {
-                if(!NodeExistsInList(ref nodes, e.TargetNode)) nodes.Add(e.TargetNode);
+                if (!NodeExistsInList(ref nodes, e.TargetNode))
+                {
+                    if (opt_nodeMatchText == null || opt_nodeMatchText.Length == 0) //no optional match criteria specified, just add it
+                    {
+                        nodes.Add(e.TargetNode);
+                    }
+                    else //only add if our match string is found in the label ex. sub_ prefix...
+                    {
+                        if (e.TargetNode.Attr.Label.IndexOf(opt_nodeMatchText) >= 0) nodes.Add(e.TargetNode);
+                    }
+                }
                 if (e.TargetNode.OutEdges.Count() > 0)
                 {
-                    AddSubNodes(ref nodes, e.TargetNode);
+                    AddSubNodes(ref nodes, e.TargetNode, opt_nodeMatchText);
                 }
             }
         } 

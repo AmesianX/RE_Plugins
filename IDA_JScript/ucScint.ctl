@@ -40,12 +40,21 @@ Attribute VB_Exposed = False
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private lastPaste As Long
 
+Event FileLoaded(fpath As String)
 Event AutoCompleteEvent(className As String)
-Event CtrlH()
+Event CtrlH() 'chance to show replace dialog
+
+Property Get isDirty() As Boolean
+    isDirty = sciMain.Modified
+End Property
 
 Property Get SCI() As SCIVB
     Set SCI = sciMain
 End Property
+
+Sub Save(path)
+    sciMain.SaveToFile CStr(path)
+End Sub
 
 Sub GotoLineCentered(ByVal line As Long, Optional selected As Boolean = True)
         
@@ -187,6 +196,7 @@ End Function
 Sub LoadFile(x)
     On Error Resume Next
     sciMain.LoadFile CStr(x)
+    RaiseEvent FileLoaded(CStr(x))
 End Sub
 
  
@@ -219,7 +229,7 @@ Private Sub sciMain_KeyUp(KeyCode As Long, Shift As Long)
     
     If Shift = 4 Then 'ctrl
         Select Case KeyCode
-            Case 72: RaiseEvent CtrlH
+            Case 72: RaiseEvent CtrlH 'replace dialog
             Case 65: sciMain.SelectAll 'a
             Case 88: sciMain.Cut 'x
             Case 67: sciMain.Copy 'c
@@ -250,7 +260,7 @@ Private Sub UserControl_Initialize()
                
         hlMain.LoadHighlighters f
         hlMain.ReadSettings "PDFStreamDumper"
-        n = hlMain.SetStylesAndOptions(sciMain, "CPP")
+        n = hlMain.SetStylesAndOptions(sciMain, "java")
                 
         sciMain.AutoCompleteOnCTRLSpace = True
         'sciMain.AutoCompleteString = "Save2Clipboard GetClipboard t eval unescape alert Hexdump WriteFile ReadFile HexString2Bytes Disasm pad EscapeHexString GetStream CRC getPageNumWords GetPageNthWord"
@@ -268,7 +278,7 @@ Private Sub UserControl_Initialize()
         sciMain.Gutter1Width = 40
         sciMain.FoldAtElse = True
         
-        hlMain.SetHighlighterExt sciMain, "bs.js"
+        'hlMain.SetHighlighterExt sciMain, "bs.js"
         sciMain.SetFocus
   
 End Sub

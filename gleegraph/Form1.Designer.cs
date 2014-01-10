@@ -45,6 +45,7 @@
             this.dlg = new System.Windows.Forms.OpenFileDialog();
             this.hScroll = new System.Windows.Forms.HScrollBar();
             this.pb = new System.Windows.Forms.ProgressBar();
+            this.setTopMostToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.mnuPopup.SuspendLayout();
             this.SuspendLayout();
@@ -103,7 +104,8 @@
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.loadGraphToolStripMenuItem,
             this.zoomAllToolStripMenuItem,
-            this.originalWIngraphToolStripMenuItem});
+            this.originalWIngraphToolStripMenuItem,
+            this.setTopMostToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
@@ -136,12 +138,12 @@
             this.renameNodeToolStripMenuItem,
             this.prefixAllFunctionsBelowToolStripMenuItem});
             this.mnuPopup.Name = "mnuPopup";
-            this.mnuPopup.Size = new System.Drawing.Size(205, 70);
+            this.mnuPopup.Size = new System.Drawing.Size(252, 70);
             // 
             // removeNodesBelowToolStripMenuItem
             // 
             this.removeNodesBelowToolStripMenuItem.Name = "removeNodesBelowToolStripMenuItem";
-            this.removeNodesBelowToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+            this.removeNodesBelowToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
             this.removeNodesBelowToolStripMenuItem.Text = "Remove Nodes Below";
             this.removeNodesBelowToolStripMenuItem.Visible = false;
             this.removeNodesBelowToolStripMenuItem.Click += new System.EventHandler(this.removeNodesBelowToolStripMenuItem_Click);
@@ -149,15 +151,15 @@
             // renameNodeToolStripMenuItem
             // 
             this.renameNodeToolStripMenuItem.Name = "renameNodeToolStripMenuItem";
-            this.renameNodeToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+            this.renameNodeToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
             this.renameNodeToolStripMenuItem.Text = "Rename Function";
             this.renameNodeToolStripMenuItem.Click += new System.EventHandler(this.renameNodeToolStripMenuItem_Click);
             // 
             // prefixAllFunctionsBelowToolStripMenuItem
             // 
             this.prefixAllFunctionsBelowToolStripMenuItem.Name = "prefixAllFunctionsBelowToolStripMenuItem";
-            this.prefixAllFunctionsBelowToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
-            this.prefixAllFunctionsBelowToolStripMenuItem.Text = "Prefix all functions below";
+            this.prefixAllFunctionsBelowToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
+            this.prefixAllFunctionsBelowToolStripMenuItem.Text = "Prefix all unnamed functions below";
             this.prefixAllFunctionsBelowToolStripMenuItem.Click += new System.EventHandler(this.prefixAllFunctionsBelowToolStripMenuItem_Click);
             // 
             // lst
@@ -186,6 +188,13 @@
             this.pb.Name = "pb";
             this.pb.Size = new System.Drawing.Size(280, 10);
             this.pb.TabIndex = 6;
+            // 
+            // setTopMostToolStripMenuItem
+            // 
+            this.setTopMostToolStripMenuItem.Name = "setTopMostToolStripMenuItem";
+            this.setTopMostToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+            this.setTopMostToolStripMenuItem.Text = "Set TopMost";
+            this.setTopMostToolStripMenuItem.Click += new System.EventHandler(this.setTopMostToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -229,6 +238,7 @@
         private System.Windows.Forms.HScrollBar hScroll;
         private System.Windows.Forms.ToolStripMenuItem originalWIngraphToolStripMenuItem;
         public System.Windows.Forms.ProgressBar pb;
+        private System.Windows.Forms.ToolStripMenuItem setTopMostToolStripMenuItem;
     }
 }
 

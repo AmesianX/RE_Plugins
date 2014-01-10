@@ -1,0 +1,32 @@
+ 
+ list.clear();
+//extract all calls from the current function 
+
+ va = ida.ScreenEA()
+ fi = ida.funcindexfromva(va);
+ list.additem("ActiveVA: " + h(va) + " FuncIndex: " + fi)
+ 
+ s = ida.functionstart(fi);;;
+ e = ida.functionend(fi);
+ 
+ list.additem("Start: " + h(s) + " End: " + h(e)) 
+ 
+ if(s > 0 && e > s){
+ 
+     c = '';
+     
+     while(s < e){
+       a = ida.getasm(s);
+       if(a.indexOf("call") == 0){
+           c+= a + "\r\n";
+       }
+       
+       s = ida.nextea(s);
+       if( s == -1) break;
+     }
+
+    t(c);   
+ }
+  
+
+
