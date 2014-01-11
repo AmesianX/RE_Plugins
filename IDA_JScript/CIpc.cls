@@ -22,6 +22,7 @@ Private Declare Function SendMessageByVal Lib "user32" Alias "SendMessageA" (ByV
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
 Private Declare Function RegisterWindowMessage Lib "user32" Alias "RegisterWindowMessageA" (ByVal lpString As String) As Long
 Private Declare Function SendMessageTimeout Lib "user32" Alias "SendMessageTimeoutA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal fuFlags As Long, ByVal uTimeout As Long, lpdwResult As Long) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
  
 Private Type COPYDATASTRUCT
     dwFlag As Long
@@ -49,6 +50,7 @@ Public Enum quickCallMessages
     qcmNextEa = 33    ' nextea:va
     qcmPrevEa = 34    ' prevea:va
     qcmScreenEA = 37  ' screenea:
+    qcmDebugMessages = 38
 End Enum
 
 Private Const WM_COPYDATA = &H4A
@@ -88,7 +90,7 @@ Function Listen(hwnd As Long) As String
     
 End Function
 
-Function FindActiveIDAWindows() As Long
+Function FindActiveIDAWindows(Optional async As Boolean = False) As Long
      Dim ret As Long
      'so a client starts up, it gets the message to use (system wide) and it broadcasts a message to all windows
      'looking for IDASrvr instances that are active. It passes its command window hwnd as wParam
@@ -97,10 +99,15 @@ Function FindActiveIDAWindows() As Long
      'clients track these hwnds.
      
      'Form1.List2.AddItem "Broadcasting message looking for IDASrvr instances msg= " & IDASRVR_BROADCAST_MESSAGE
-     SendMessageTimeout HWND_BROADCAST, IDASRVR_BROADCAST_MESSAGE, subclassed_hwnd, 0, 0, 1000, ret
      
-     ValidateActiveIDAWindows
-     FindActiveIDAWindows = Servers.Count
+     If async Then
+        PostMessage HWND_BROADCAST, IDASRVR_BROADCAST_MESSAGE, subclassed_hwnd, 0
+     Else
+        SendMessageTimeout HWND_BROADCAST, IDASRVR_BROADCAST_MESSAGE, subclassed_hwnd, 0, 0, 1000, ret
+     End If
+     
+      ValidateActiveIDAWindows
+      FindActiveIDAWindows = Servers.Count
      
  End Function
 

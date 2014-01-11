@@ -20,6 +20,13 @@ Begin VB.Form Form1
    ScaleHeight     =   7020
    ScaleWidth      =   10230
    StartUpPosition =   3  'Windows Default
+   Begin MSScriptControlCtl.ScriptControl sc2 
+      Left            =   9630
+      Top             =   30
+      _ExtentX        =   1005
+      _ExtentY        =   1005
+      Language        =   "jscript"
+   End
    Begin VB.Frame Frame1 
       Caption         =   "Log Window and Output Pane"
       BeginProperty Font 
@@ -31,10 +38,10 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   2535
-      Left            =   120
+      Height          =   3195
+      Left            =   150
       TabIndex        =   1
-      Top             =   4440
+      Top             =   3780
       Width           =   9975
       Begin VB.Frame fraSaved 
          BorderStyle     =   0  'None
@@ -48,10 +55,10 @@ Begin VB.Form Form1
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Height          =   405
-         Left            =   4470
+         Height          =   495
+         Left            =   4500
          TabIndex        =   7
-         Top             =   1980
+         Top             =   2640
          Width           =   3765
          Begin MSComctlLib.ImageCombo cboSaved 
             Height          =   375
@@ -107,10 +114,10 @@ Begin VB.Form Form1
             Strikethrough   =   0   'False
          EndProperty
          Height          =   255
-         Left            =   120
+         Left            =   150
          TabIndex        =   5
          TabStop         =   0   'False
-         Top             =   1980
+         Top             =   2670
          Width           =   1935
       End
       Begin VB.CommandButton Command1 
@@ -128,7 +135,7 @@ Begin VB.Form Form1
          Left            =   8460
          TabIndex        =   4
          TabStop         =   0   'False
-         Top             =   1920
+         Top             =   2550
          Width           =   1320
       End
       Begin VB.ListBox List1 
@@ -141,7 +148,7 @@ Begin VB.Form Form1
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Height          =   1230
+         Height          =   2010
          Left            =   1020
          TabIndex        =   2
          TabStop         =   0   'False
@@ -159,7 +166,7 @@ Begin VB.Form Form1
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Height          =   1500
+         Height          =   2280
          Left            =   120
          MultiLine       =   -1  'True
          ScrollBars      =   2  'Vertical
@@ -182,7 +189,7 @@ Begin VB.Form Form1
          Height          =   375
          Left            =   2160
          TabIndex        =   6
-         Top             =   1980
+         Top             =   2670
          Width           =   6135
       End
    End
@@ -194,13 +201,13 @@ Begin VB.Form Form1
       Language        =   "JScript"
    End
    Begin Project1.ucScint txtJS 
-      Height          =   4245
+      Height          =   3495
       Left            =   135
       TabIndex        =   0
       Top             =   135
       Width           =   10005
       _ExtentX        =   17648
-      _ExtentY        =   7488
+      _ExtentY        =   6165
    End
    Begin VB.Menu mnuTools 
       Caption         =   "Tools"
@@ -213,17 +220,24 @@ Begin VB.Form Form1
       Begin VB.Menu mnuSaveAs 
          Caption         =   "Save As"
       End
+      Begin VB.Menu mnuSpacer1 
+         Caption         =   "-"
+      End
       Begin VB.Menu mnuLoadLast 
          Caption         =   "Load LastScript"
       End
-      Begin VB.Menu mnuSpacer1 
+      Begin VB.Menu mnuFormatJS 
+         Caption         =   "Format Javascript"
+      End
+      Begin VB.Menu mnuSpacer2 
          Caption         =   "-"
       End
       Begin VB.Menu mnuScintOpts 
          Caption         =   "Scintinella Options"
+         Visible         =   0   'False
       End
       Begin VB.Menu mnuSelectIDAInstance 
-         Caption         =   "Select Active IDA Instance"
+         Caption         =   "Reconnect to IDA"
       End
       Begin VB.Menu mnuSHellExt 
          Caption         =   "Register .idajs Shell Extension"
@@ -272,21 +286,32 @@ End Sub
 
 Private Sub Command1_Click()
     On Error Resume Next
+    Dim idb As String
+    Dim hwnd As Long
     
     Text1 = Empty
     
     ida.WriteFile App.path & "\lastScript.txt", txtJS.Text
     
     If Not ida.isUp Then
-        Text1 = "IDA Server not found"
-        lblIDB.Caption = "Current IDB: (null)"
-        Exit Sub
+        hwnd = Form2.SelectIDAInstance(True, False)
+        If hwnd <> 0 Then
+            ida.ipc.RemoteHWND = hwnd
+            idb = ida.LoadedFile
+            List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
+            List1.AddItem "IDB: " & idb
+            lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
+        Else
+            Text1 = "IDA Server instances not found"
+            lblIDB.Caption = "Current IDB: (null)"
+            Exit Sub
+        End If
     End If
     
     sc.Reset
     sc.AddObject "list", List1, True
     sc.AddObject "ida", ida, True
-    sc.AddObject "vb", ida, True
+    sc.AddObject "app", ida, True
     sc.AddObject "fso", ida, True  'parlor trick to break up intellisense list into smaller segments..
     
     Const wrappers = "function h(x){ return ida.intToHex(x);};" & _
@@ -308,7 +333,7 @@ Private Sub Form_Load()
     Dim hwnd As Long
     Dim idb As String
     Dim windows As Long
-    
+        
     FormPos Me, True
     Me.Visible = True
     
@@ -359,7 +384,8 @@ Private Sub Form_Load()
     End If
     
     List1.Move Text1.Left, Text1.Top, Text1.Width, Text1.Height
-    Text1 = "Built in classes: ida. fso." & vbCrLf & "global functions alert(x), h(x) [int to hex], t(x) [append textbox with x]"
+    x = " Built in classes: ida. fso. app. [hitting the dot will display intellisense and open paran codetip intellisense] \n\n global functions: \n\t alert(x), \n\t h(x) [int to hex], \n\t t(x) [append this textbox with x] \n\t d(x) [add x to debug pane list]"
+    Text1 = Replace(Replace(x, "\n", vbCrLf), "\t", vbTab)
     
 End Sub
 
@@ -395,6 +421,22 @@ Private Sub Form_Unload(Cancel As Integer)
     End If
 End Sub
 
+Private Sub mnuFormatJS_Click()
+
+    On Error Resume Next
+    Dim js As String
+    
+    js = fso.ReadFile(App.path & "\beautify.js")
+    
+    sc2.Reset
+    sc2.AddCode js
+    sc2.AddObject "txtJS", txtJS, True
+    sc2.AddCode "txtJS.text = js_beautify(txtJS.text, {indent_size: 1, indent_char: '\t'}).split('\n').join('\r\n');"
+
+    DoEvents
+    
+End Sub
+
 Private Sub mnuLoadLast_Click()
     On Error Resume Next
     txtJS.LoadFile App.path & "\lastscript.txt"
@@ -415,7 +457,6 @@ Private Sub mnuSave_Click()
     
     If Len(LoadedFile) > 0 Then
         txtJS.Save LoadedFile
-        'fso.WriteFile LoadedFile, txtJS.Text
     Else
         mnuSaveAs_Click
     End If
@@ -518,17 +559,17 @@ Private Sub txtJS_AutoCompleteEvent(className As String)
         txtJS.ShowAutoComplete "readfile writefile appendfile fileexists deletefile"
     ElseIf className = "ida" Then
         'do i want to break these up into smaller chunks for intellisense?
-        txtJS.ShowAutoComplete "imagebase loadedfile jump patchbyte originalbyte readbyte inttohex refresh() " & _
+        txtJS.ShowAutoComplete "imagebase() loadedfile() jump patchbyte originalbyte readbyte inttohex refresh() " & _
                                "numfuncs() functionstart functionend functionname getasm instsize xrefsto " & _
-                               "xrefsfrom undefine getname jumprva screenea " & _
+                               "xrefsfrom undefine getname jumprva screenea() funccount() find " & _
                                "hideea showea hideblock showblock removename setname makecode " & _
                                "getcomment addcomment addcodexref adddataxref delcodexref deldataxref " & _
                                "funcindexfromva funcvabyname nextea prevea patchstring makestr makeunk " & _
                                "renamefunc"
     ElseIf className = "list" Then
         txtJS.ShowAutoComplete "additem clear"
-    ElseIf className = "vb" Then
-        txtJS.ShowAutoComplete "getclipboard setclipboard askvalue openfiledialog savefiledialog exec list benchmark"
+    ElseIf className = "app" Then
+        txtJS.ShowAutoComplete "getclipboard setclipboard askvalue openfiledialog savefiledialog exec list benchmark enableIDADebugMessages"
     End If
         
     'divide up into these classes for intellise sense cleanliness?

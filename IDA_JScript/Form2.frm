@@ -50,7 +50,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
  
 
-Public Function SelectIDAInstance(Optional refresh As Boolean = True) As Long
+Public Function SelectIDAInstance(Optional refresh As Boolean = True, Optional autoSelectIfOnlyOne As Boolean = True) As Long
     
     Dim x
     Dim cnt As Long
@@ -59,7 +59,7 @@ Public Function SelectIDAInstance(Optional refresh As Boolean = True) As Long
     On Error Resume Next
     
     If refresh Then
-        cnt = Form1.ida.ipc.FindActiveIDAWindows
+        cnt = Form1.ida.ipc.FindActiveIDAWindows()
     Else
         cnt = Form1.ida.ipc.Servers.Count
     End If
@@ -69,7 +69,7 @@ Public Function SelectIDAInstance(Optional refresh As Boolean = True) As Long
         Unload Me
         Exit Function
         
-    ElseIf cnt = 1 Then
+    ElseIf cnt = 1 And autoSelectIfOnlyOne Then
         SelectIDAInstance = Form1.ida.ipc.Servers(1)
         Unload Me
         Exit Function

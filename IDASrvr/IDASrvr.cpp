@@ -46,7 +46,7 @@ char baseKey[200] = "Software\\VB and VBA Program Settings\\IPC\\Handles";
 char *IPC_NAME = "IDA_SERVER";
 HWND ServerHwnd=0;
 WNDPROC oldProc=0;
-bool m_debug = true;
+bool m_debug = false;
 char m_msg[2020];
 cpyData CopyData;
 CRITICAL_SECTION m_cs;
@@ -216,6 +216,10 @@ int HandleQuickCall(int fIndex, int arg1){
 
 	    case 37: //screenea:
 				 return ScreenEA();
+
+		case 38: //debugmsgs: 1/0
+				m_debug = arg1 == 1 ? true : false;
+				return 0;
 					
 
 	}
@@ -274,6 +278,7 @@ int HandleMsg(char* m){
 	   35 makestring:va:[ascii | unicode]
 	   36 makeunk:va:size
 	   37 screenea:
+	   38 findcode:start:end:hexstr  //indexes no longer aligned with quick call..
     */
 
 	const int MAX_ARGS = 6;
@@ -284,7 +289,7 @@ int HandleMsg(char* m){
 
 	memset(buf, 0,500);
 	memset(tmp, 0,500);
-
+ 
 	//                0      1         2       3        4          5          6        7         8
 	char *cmds[] = {"msg","jmp","jmp_name","name_va","rename","loadedfile","getasm","jmp_rva","imgbase",
 	/*                9            10         11       12        13        14           15         16      */
@@ -293,8 +298,8 @@ int HandleMsg(char* m){
 					"setname","refsto","refsfrom","undefine","getname","hide","show","remname","makecode",
     /*               26            27           28             29           30             31              */
 	                "addcomment","getcomment","addcodexref","adddataxref","delcodexref","deldataxref",
-	/*               32          33         34        35           36        37       */
-					"funcindex","nextea","prevea","makestring","makeunk", "screenea",
+	/*               32          33         34        35           36        37           38       */
+					"funcindex","nextea","prevea","makestring","makeunk", "screenea", "findcode",
 					"\x00"};
 	int i=0;
 	int argc=0;
@@ -504,6 +509,11 @@ int HandleMsg(char* m){
 		  case 37: //screenea:
 					return ScreenEA();
 
+		  case 38: //findcode:start:end:hexstr
+				    if( argc != 3 ){msg("findcode needs 3 args\n"); return -1;}
+					return find_binary( atoi(args[1]), atoi(args[2]), args[3], 16, SEARCH_DOWN);
+
+
 	}				
 
 };
@@ -516,6 +526,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		if( uMsg == IDA_QUICKCALL_MESSAGE )//uMsg apparently has to be a registered message to be received...
 		{
 			try{
+				if(m_debug) msg("QuickCall Message Received(%d, %x)\n", (int)wParam, (int)lParam );
 				return HandleQuickCall( (int)wParam, (int)lParam );
 			}catch(...){ 
 				msg("Error in HandleQuickCall(%d, %x)\n", (int)wParam, (int)lParam );
