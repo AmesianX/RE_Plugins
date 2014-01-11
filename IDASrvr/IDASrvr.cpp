@@ -77,6 +77,42 @@ int EaForFxName(char* fxName){
 	return 0;
 }
 
+bool FileExists(char* szPath)
+{
+  DWORD dwAttrib = GetFileAttributes(szPath);
+  bool rv = (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY)) ? true : false;
+  return rv;
+}
+
+void Launch_IdaJscript(){
+
+	 char tmp[500] = {0};
+	 char tmp2[500] = {0};
+     unsigned long l = sizeof(tmp);
+	 HKEY h;
+	 
+	 RegOpenKeyEx(HKEY_CURRENT_USER, baseKey, 0, KEY_READ, &h);
+	 RegQueryValueExA(h, "IDAJSCRIPT" , 0, 0, (unsigned char*)tmp, &l);
+	 RegCloseKey(h);
+
+	 if( strlen(tmp) == 0 ){
+		 MessageBox(0,"IDA JScript path not yet set in registry. run it once first","",0);
+		 return;
+	 }
+
+	 if( !FileExists(tmp) ){
+		MessageBox(0,"IDA JScript path not found. run it again to re-register path in registry","",0);
+		return;
+	 }
+
+	 if( strlen(tmp) < (sizeof(tmp) + 20)){
+		 sprintf(tmp2, "%s /hwnd=%d", tmp, ServerHwnd);
+	 }
+
+	 WinExec(tmp2,1);
+	 
+}
+
 HWND ReadReg(char* name){
 
 	 char tmp[20] = {0};
@@ -89,6 +125,7 @@ HWND ReadReg(char* name){
 
 	 return (HWND)atoi(tmp);
 }
+
 
 
 void SetReg(char* name, int value){
@@ -609,7 +646,7 @@ void idaapi term(void)
 void idaapi run(int arg)
 {
  
-  return;
+  Launch_IdaJscript();
 
 }
 
@@ -617,7 +654,7 @@ void idaapi run(int arg)
 
 char comment[] = "";
 char help[] ="";
-char wanted_name[] = "IDASrvr";
+char wanted_name[] = "IDA JScript";
 char wanted_hotkey[] = "Alt-0";
 
 //Plugin Descriptor Block

@@ -333,7 +333,11 @@ Private Sub Form_Load()
     Dim hwnd As Long
     Dim idb As String
     Dim windows As Long
-        
+    
+    
+    'quick way for IDASrvr to be able to find us for launching..
+    SaveSetting "IPC", "HANDLES", "IDAJSCRIPT", App.path & "\IDA_JScript.exe"
+    
     FormPos Me, True
     Me.Visible = True
     
@@ -355,31 +359,52 @@ Private Sub Form_Load()
         cboSaved.Text = Empty
     End If
     
-    If fso.FileExists(Command) Then
-        LoadedFile = Command
-        txtJS.LoadFile Command
-    ElseIf ida.FileExists(App.path & "\lastScript.txt") Then
+    Dim c As String, a As Long, autoConnectHWND As Long, t As String
+    
+    c = Command
+    
+    a = InStr(c, "/hwnd=")
+    If a > 0 Then
+        t = Mid(c, a)
+        c = Trim(Replace(c, t, Empty))
+        t = Trim(Replace(t, "/hwnd=", Empty))
+        autoConnectHWND = CLng(t)
+        If IsWindow(autoConnectHWND) = 0 Then autoConnectHWND = 0
+    End If
+    
+    If fso.FileExists(c) Then
+        LoadedFile = c
+        txtJS.LoadFile c
+    'ElseIf fso.FileExists(App.path & "\lastScript.txt") Then
         'LoadedFile = App.path & "\lastScript.txt"
         'txtJS.LoadFile LoadedFile
     End If
     
-    windows = ida.ipc.FindActiveIDAWindows()
-    If windows = 0 Then
-        List1.AddItem "No open IDA Windows detected. Use Tools menu to connect latter."
-    ElseIf windows = 1 Then
-        ida.ipc.RemoteHWND = ida.ipc.Servers(1)
+    If autoConnectHWND <> 0 Then
+        ida.ipc.RemoteHWND = autoConnectHWND
         idb = ida.LoadedFile
         List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
         List1.AddItem "IDB: " & idb
         lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
     Else
-        hwnd = Form2.SelectIDAInstance()
-        If hwnd <> 0 Then
-            ida.ipc.RemoteHWND = hwnd
+        windows = ida.ipc.FindActiveIDAWindows()
+        If windows = 0 Then
+            List1.AddItem "No open IDA Windows detected. Use Tools menu to connect latter."
+        ElseIf windows = 1 Then
+            ida.ipc.RemoteHWND = ida.ipc.Servers(1)
             idb = ida.LoadedFile
             List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
             List1.AddItem "IDB: " & idb
             lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
+        Else
+            hwnd = Form2.SelectIDAInstance()
+            If hwnd <> 0 Then
+                ida.ipc.RemoteHWND = hwnd
+                idb = ida.LoadedFile
+                List1.AddItem "IDA Server Up hwnd=" & ida.ipc.RemoteHWND & " (0x" & Hex(ida.ipc.RemoteHWND) & ")"
+                List1.AddItem "IDB: " & idb
+                lblIDB = "Current IDB: " & fso.FileNameFromPath(idb)
+            End If
         End If
     End If
     
